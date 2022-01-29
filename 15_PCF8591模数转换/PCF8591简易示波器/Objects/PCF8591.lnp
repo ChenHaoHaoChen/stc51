@@ -1,0 +1,6 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\keyboard.obj",
+".\Objects\I2C.obj" 
+TO ".\Objects\PCF8591" 
+PRINT(".\Listings\PCF8591.m51") RAMSIZE(256) 
