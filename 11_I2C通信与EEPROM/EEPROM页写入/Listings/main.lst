@@ -1,0 +1,82 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              08/25/2021 10:24:56 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          
+   3          extern void LCD1602init();
+   4          extern void LCD1602show(unsigned char x,unsigned char y,unsigned char *str);
+   5          
+   6          extern void E2read(unsigned char address,unsigned char *date,unsigned char len);
+   7          extern void E2write(unsigned char address,unsigned char *date,unsigned char len);
+   8          
+   9          void numtostring(unsigned char *buf,unsigned char *st,unsigned char len);
+  10          
+  11          void main()
+  12          {
+  13   1        unsigned char i;
+  14   1        unsigned char buffer[5];
+  15   1        unsigned char str[20];
+  16   1        
+  17   1        LCD1602init();
+  18   1        E2read(0X00,buffer,sizeof(buffer));
+  19   1        numtostring(buffer,str,sizeof(buffer));
+  20   1        LCD1602show(0,0,str);
+  21   1        for(i=0;i<sizeof(buffer);i++)
+  22   1        {
+  23   2          buffer[i] = buffer[i] + i + 1;
+  24   2        }
+  25   1        E2write(0X00,buffer,sizeof(buffer));
+  26   1        while(1);
+  27   1      }
+  28          
+  29          void numtostring(unsigned char *buf,unsigned char *st,unsigned char len)
+  30          {
+  31   1        unsigned char temp;
+  32   1        while(len--)
+  33   1        {
+  34   2          temp = *buf >> 4;
+  35   2          if(temp <= 9)
+  36   2          {
+  37   3            *st++ = temp + '0';
+  38   3          }
+  39   2          else
+  40   2          {
+  41   3            *st++ = temp - 10 + 'A';
+  42   3          }
+  43   2          temp = 0X0F & *buf;
+  44   2          if(temp <= 9)
+  45   2          {
+  46   3            *st++ = temp + '0';
+  47   3          }
+  48   2          else
+  49   2          {
+  50   3            *st++ = temp - 10 + 'A';
+  51   3          }
+  52   2          *st++ = ' ';
+  53   2          buf++;
+  54   2        }
+C51 COMPILER V9.59.0.0   MAIN                                                              08/25/2021 10:24:56 PAGE 2   
+
+  55   1        
+  56   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    262    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      32
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

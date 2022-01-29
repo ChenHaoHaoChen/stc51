@@ -1,0 +1,5 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\LCD1602.obj" 
+TO ".\Objects\I2C" 
+PRINT(".\Listings\I2C.m51") RAMSIZE(256) 

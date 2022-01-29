@@ -1,0 +1,151 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              08/25/2021 08:51:04 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          
+   3          extern void LCD1602init();
+   4          extern void LCD1602show(unsigned char x,unsigned char y,unsigned char *str);
+   5          
+   6          extern void I2Cstart();
+   7          extern unsigned char I2Cwrite(unsigned char dat);
+   8          extern void I2Cstop();
+   9          extern unsigned char I2CreadACK();
+  10          extern unsigned char I2CreadNACK();
+  11          
+  12          void I2CEEPROMread(unsigned char address,unsigned char *buffer,unsigned char len);
+  13          void I2CEEPROMwrite(unsigned char address,unsigned char *buffer,unsigned char len);
+  14          void numtostring(unsigned char *str,unsigned char *buffer,unsigned char len);
+  15          
+  16          void main()
+  17          {
+  18   1        unsigned char buffer[5];
+  19   1        unsigned char str[20];
+  20   1        unsigned char i;
+  21   1        
+  22   1        LCD1602init();
+  23   1        
+  24   1        I2CEEPROMread(0X00,buffer,sizeof(buffer));
+  25   1        
+  26   1        numtostring(str,buffer,sizeof(buffer));
+  27   1        LCD1602show(0,0,str);
+  28   1        
+  29   1        for(i=0;i<sizeof(buffer);i++)
+  30   1        {
+  31   2          buffer[i] = buffer[i] + i +1;
+  32   2        }
+  33   1        I2CEEPROMwrite(0X00,buffer,sizeof(buffer));
+  34   1        while(1);
+  35   1      }
+  36          
+  37          void I2CEEPROMread(unsigned char address,unsigned char *buffer,unsigned char len)
+  38          {
+  39   1        do
+  40   1        {
+  41   2          I2Cstart();
+  42   2          if( (~I2Cwrite(0X50<<1)) )
+  43   2          {
+  44   3            break;
+  45   3          }
+  46   2          I2Cstop();
+  47   2        }
+  48   1        while(1);
+  49   1        I2Cwrite(address);
+  50   1        I2Cstart();
+  51   1        I2Cwrite((0X50<<1) | 0X01);
+  52   1        while(len>1)
+  53   1        {
+  54   2          *buffer++ = I2CreadACK();
+C51 COMPILER V9.59.0.0   MAIN                                                              08/25/2021 08:51:04 PAGE 2   
+
+  55   2          len--;
+  56   2        }
+  57   1        *buffer = I2CreadNACK();
+  58   1        I2Cstop();
+  59   1      }
+  60          
+  61          void I2CEEPROMwrite(unsigned char address,unsigned char *buffer,unsigned char len)
+  62          {
+  63   1        while(len--)
+  64   1        {
+  65   2          do
+  66   2          {
+  67   3          I2Cstart();
+  68   3          if( (~I2Cwrite(0X50<<1)) )
+  69   3            {
+  70   4              break;
+  71   4            }
+  72   3          I2Cstop();
+  73   3          }
+  74   2          while(1);
+  75   2          I2Cwrite(address++);
+  76   2          I2Cwrite(*buffer++);
+  77   2          I2Cstop();
+  78   2        }
+  79   1      }
+  80          
+  81          void numtostring(unsigned char *str,unsigned char *buffer,unsigned char len)
+  82          {
+  83   1        unsigned char temp;
+  84   1        while(len--)
+  85   1        {
+  86   2          temp = *buffer >>4;
+  87   2          if(temp <= 9)
+  88   2          {
+  89   3            *str++ = temp + '0';
+  90   3          }
+  91   2          else
+  92   2          {
+  93   3            *str++ = temp - 10 + 'A';
+  94   3          }
+  95   2          temp = *buffer & 0X0F;
+  96   2          if(temp <= 9)
+  97   2          {
+  98   3            *str++ = temp + '0';
+  99   3          }
+ 100   2          else
+ 101   2          {
+ 102   3            *str++ = temp - 10 + 'A';
+ 103   3          }
+ 104   2          *str++ = ' ';
+ 105   2          buffer++;
+ 106   2        }
+ 107   1        //*str = '\0';
+ 108   1      }
+ 109          
+ 110          
+ 111          
+ 112          
+ 113          
+ 114          
+ 115          
+ 116          
+C51 COMPILER V9.59.0.0   MAIN                                                              08/25/2021 08:51:04 PAGE 3   
+
+ 117          
+ 118          
+ 119          
+ 120          
+ 121          
+ 122          
+ 123          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    418    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      42
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

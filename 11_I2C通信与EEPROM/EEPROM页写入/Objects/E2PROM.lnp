@@ -1,0 +1,7 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\LCD1602.obj",
+".\Objects\I2C.obj",
+".\Objects\EEPROM.obj" 
+TO ".\Objects\E2PROM" 
+PRINT(".\Listings\E2PROM.m51") RAMSIZE(256) 

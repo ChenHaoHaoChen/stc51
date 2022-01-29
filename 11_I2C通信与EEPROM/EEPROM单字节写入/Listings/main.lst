@@ -1,0 +1,72 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              08/24/2021 10:34:26 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          
+   3          extern void LCD1602init();  //外部函数声明
+   4          extern void LCD1602show(unsigned char x,unsigned char y,unsigned char *str);
+   5          extern void I2Cstart();
+   6          extern unsigned char I2Cwrite(unsigned char dat);
+   7          extern void I2Cstop();
+   8          extern unsigned char I2CreadNACK();
+   9          
+  10          unsigned char I2Creadbyte(unsigned char address);//函数声明
+  11          void I2Cwritebyte(unsigned char address,unsigned char dat);
+  12          
+  13          void main()
+  14          {
+  15   1        unsigned char dat;
+  16   1        unsigned char str[10];
+  17   1        LCD1602init();              //LCD1602初始化
+  18   1        dat = I2Creadbyte(0x00);    //读取EEPROM0X00地址为上的数据
+  19   1        str[0] = dat % 10 + '0';    //读出的数据取其个位数
+  20   1        str[1] = '\0';              //改成字符串形式
+  21   1        LCD1602show(0,0,str);       //将读取到的数据显示在LCD1602上
+  22   1        I2Cwritebyte(0X00,dat+1);   //将读取到的数据加1，并写入0X00地址中
+  23   1        while(1);                   //程序等待
+  24   1      }
+  25          /*读取EEPROM中一个字节，address为地址*/
+  26          unsigned char I2Creadbyte(unsigned char address)
+  27          {
+  28   1        unsigned char dat;
+  29   1        I2Cstart();
+  30   1        I2Cwrite(0X50<<1);
+  31   1        I2Cwrite(address);
+  32   1        I2Cstart();
+  33   1        I2Cwrite((0X50<<1) | 0X01);
+  34   1        dat = I2CreadNACK();
+  35   1        I2Cstop();
+  36   1        return dat;
+  37   1      }
+  38          /*写入EEPROM中一个字节，address为地址，dat为一字节数据*/
+  39          void I2Cwritebyte(unsigned char address,unsigned char dat)
+  40          {
+  41   1        I2Cstart();
+  42   1        I2Cwrite(0X50<<1);
+  43   1        I2Cwrite(address);
+  44   1        I2Cwrite(dat);
+  45   1        I2Cstop();
+  46   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    105    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      15
+C51 COMPILER V9.59.0.0   MAIN                                                              08/24/2021 10:34:26 PAGE 2   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,120 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              08/23/2021 10:42:11 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include <intrins.h> 
+   3          #define delay() {_nop_();_nop_();_nop_();_nop_();}//delay()函数为延时4个机械周期
+   4          sbit SDA = P3^6;
+   5          sbit SCL = P3^7;
+   6          
+   7          extern void LCD1602init();//外部函数声明
+   8          extern void LCD1602show(unsigned char x,unsigned char y,unsigned char *str);
+   9          unsigned char I2Caddress(unsigned char address);//函数声明
+  10          
+  11          void main()
+  12          {
+  13   1        unsigned char ACK;      //ACK变量为接受方发送的数据，ACK = 0：表示此地址存在，反之，不存在
+  14   1        unsigned char str[10];  //LCD1602显示数组
+  15   1        LCD1602init();          //LCD1602初始化
+  16   1        ACK = I2Caddress(0X50); //用I2C通信发送地址
+  17   1        str[0] = '0';
+  18   1        str[1] = 'X';
+  19   1        str[2] = '5';
+  20   1        str[3] = '0';
+  21   1        str[4] = ':';
+  22   1        str[5] = ACK+'0';       //将ACK转换为字符形式
+  23   1        str[6] = '\0';
+  24   1        LCD1602show(0,0,str);   //LCD1602显示 地址：0/1（0：地址存在；1：地址不存在）
+  25   1        
+  26   1        ACK = I2Caddress(0X66);
+  27   1        str[0] = '0';
+  28   1        str[1] = 'X';
+  29   1        str[2] = '6';
+  30   1        str[3] = '6';
+  31   1        str[4] = ':';
+  32   1        str[5] = ACK+'0';
+  33   1        str[6] = '\0';
+  34   1        LCD1602show(0,1,str);
+  35   1        //while(1);               //程序执行完等待
+  36   1      }
+  37          
+  38          void I2Cstart()
+  39          {
+  40   1        SCL = 1;
+  41   1        SDA = 1;
+  42   1        delay();
+  43   1        SDA = 0;
+  44   1        delay();
+  45   1        SCL = 0;
+  46   1      }
+  47          
+  48          unsigned char I2Cwritedata(dat)
+  49          {
+  50   1        unsigned char ACK;
+  51   1        unsigned char mask;
+  52   1        for(mask=0X80;mask!=0;mask=mask>>1)
+  53   1        {
+  54   2          if((mask & dat) == 0)
+C51 COMPILER V9.59.0.0   MAIN                                                              08/23/2021 10:42:11 PAGE 2   
+
+  55   2          {
+  56   3            SDA = 0;
+  57   3          }
+  58   2          else 
+  59   2          {
+  60   3            SDA = 1;
+  61   3          }
+  62   2          delay();
+  63   2          SCL = 1;
+  64   2          delay();
+  65   2          SCL = 0;
+  66   2        }
+  67   1        SDA = 1;
+  68   1        delay();
+  69   1        SCL = 1;
+  70   1        ACK = SDA;
+  71   1        delay();
+  72   1        SCL = 0;
+  73   1        return ACK;
+  74   1      }
+  75          
+  76          void I2Cstop()
+  77          {
+  78   1        SCL = 0;
+  79   1        SDA = 0;
+  80   1        delay();
+  81   1        SCL = 1;
+  82   1        delay();
+  83   1        SDA = 1;
+  84   1        delay();
+  85   1      }
+  86          
+  87          unsigned char I2Caddress(unsigned char address)
+  88          {
+  89   1        unsigned char ACK;
+  90   1        I2Cstart();
+  91   1        ACK = I2Cwritedata(address<<1);
+  92   1        I2Cstop();
+  93   1        return ACK;
+  94   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    188    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
