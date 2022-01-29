@@ -1,0 +1,208 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              08/09/2021 14:27:53 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          sbit ADDR0 = P1^0;
+   3          sbit ADDR1 = P1^1;
+   4          sbit ADDR2 = P1^2;
+   5          sbit ADDR3 = P1^3;
+   6          sbit ENLED = P1^4;
+   7          sbit KEYOUT4 = P2^0;
+   8          sbit KEYOUT3 = P2^1;
+   9          sbit KEYOUT2 = P2^2;
+  10          sbit KEYOUT1 = P2^3;
+  11          sbit KEYIN1 = P2^4;
+  12          sbit KEYIN2 = P2^5;
+  13          sbit KEYIN3 = P2^6;
+  14          sbit KEYIN4 = P2^7;
+  15          unsigned char code number[]={ //数码管显示驱动数组      
+  16            0xc0,0xf9,0xa4,0xb0,0x99,
+  17            0x92,0x82,0xf8,0x80,0x90
+  18            };
+  19          unsigned char keyfinally[4][4]={ //16个按键的按键终值
+  20            {1,1,1,1},
+  21            {1,1,1,1},
+  22            {1,1,1,1},
+  23            {1,1,1,1}
+  24            };
+  25          unsigned char ledbuffer[]={ //6个数码管显示缓冲数组
+  26            0xff,0xff,0xff,0xff,0xff,0xff
+  27            };
+  28          unsigned char code keycodemap[4][4]={ //按键映射表
+  29            {0x00,0xec,0xea,0x0a},
+  30            {0x01,0x02,0x03,0x0b},
+  31            {0x04,0x05,0x06,0x0c},
+  32            {0x07,0x08,0x09,0x0d}
+  33            };
+  34          void keyaction(unsigned char keycode); //函数声明部分
+  35          void shownumber(unsigned int r);
+  36          void keyscan();
+  37          void ledscan();
+  38          void main()
+  39          {
+  40   1        unsigned char backup[4][4]={ //按键上一个按键状态值
+  41   1        {1,1,1,1},
+  42   1        {1,1,1,1},
+  43   1        {1,1,1,1},
+  44   1        {1,1,1,1}
+  45   1        };
+  46   1        unsigned char i,j;
+  47   1        ADDR3 = 1; //打开74138译码器
+  48   1        ENLED = 0;
+  49   1        
+  50   1        TMOD = 0X01; //打开定时器，定时1ms
+  51   1        TH0 = 0XFC; 
+  52   1        TL0 = 0X67;
+  53   1        TR0 = 1;
+  54   1        
+C51 COMPILER V9.59.0.0   MAIN                                                              08/09/2021 14:27:53 PAGE 2   
+
+  55   1        EA = 1; //打开定时器0中断
+  56   1        ET0 = 1;
+  57   1           
+  58   1        while(1)
+  59   1        {
+  60   2          for(i=0;i<4;i++) //检测按键状态
+  61   2          {
+  62   3            for(j=0;j<4;j++)
+  63   3            {
+  64   4              if(keyfinally[i][j] != backup[i][j])
+  65   4              {
+  66   5                if(backup[i][j] == 0)
+  67   5                {
+  68   6                  keyaction(keycodemap[i][j]);
+  69   6                }
+  70   5                backup[i][j] = keyfinally[i][j];
+  71   5              }
+  72   4            }
+  73   3          }
+  74   2        }
+  75   1      }
+  76          void keyaction(unsigned char keycode)
+  77          {
+  78   1        static unsigned int result = 0;
+  79   1        static unsigned int temp = 0;
+  80   1        if((keycode >= 0x00) && (keycode <= 0x09)) //若按键按下为0-9
+  81   1        {
+  82   2          temp = temp*10 + keycode;
+  83   2          shownumber(temp);          
+  84   2        }
+  85   1        else if(keycode == 0x0a)//若按键按下加
+  86   1        {
+  87   2          result = result + temp; 
+  88   2          temp = 0;                  
+  89   2        }
+  90   1        else if(keycode == 0xea)//若按键按下enter
+  91   1        {
+  92   2          result = result + temp;
+  93   2          shownumber(result);
+  94   2        }
+  95   1        else if(keycode == 0xec)//若按键按下esc
+  96   1        {
+  97   2          result = 0;
+  98   2          temp = 0;
+  99   2          shownumber(result);
+ 100   2        }
+ 101   1        else
+ 102   1        {}
+ 103   1      }
+ 104          void shownumber(unsigned int r)
+ 105          {
+ 106   1        unsigned char i,j;
+ 107   1        for(i=0;i<6;i++)  //将结果按位分配到ledbuffer数组中
+ 108   1        {
+ 109   2          ledbuffer[i] = number[r%10];
+ 110   2          r = r/10;
+ 111   2        }
+ 112   1        for(j=5;j>0;j--) //高位灭零
+ 113   1        {
+ 114   2          if(ledbuffer[j] == 0xc0)
+ 115   2          {
+ 116   3            ledbuffer[j] = 0xff;
+C51 COMPILER V9.59.0.0   MAIN                                                              08/09/2021 14:27:53 PAGE 3   
+
+ 117   3          }
+ 118   2          else
+ 119   2          {
+ 120   3            break;
+ 121   3          }
+ 122   2        }
+ 123   1      }
+ 124          void interrupttime0() interrupt 1 //每1ms进入中断
+ 125          {
+ 126   1        TH0 = 0XFC;
+ 127   1        TL0 = 0X67;
+ 128   1        keyscan(); //按键每1ms扫描
+ 129   1        ledscan(); //数码管每1ms扫描
+ 130   1      }
+ 131          void keyscan()
+ 132          {
+ 133   1        static unsigned char keybuffer[4][4]={
+ 134   1        {0xff,0xff,0xff,0xff},{0xff,0xff,0xff,0xff},
+ 135   1        {0xff,0xff,0xff,0xff},{0xff,0xff,0xff,0xff}
+ 136   1        };
+ 137   1        static unsigned char i = 0;
+ 138   1        static unsigned char j = 0;
+ 139   1        keybuffer[i][0] = keybuffer[i][0] << 1 |KEYIN1;
+ 140   1        keybuffer[i][1] = keybuffer[i][1] << 1 |KEYIN2;
+ 141   1        keybuffer[i][2] = keybuffer[i][2] << 1 |KEYIN3;
+ 142   1        keybuffer[i][3] = keybuffer[i][3] << 1 |KEYIN4;
+ 143   1        for(j=0;j<4;j++)
+ 144   1        {
+ 145   2          if( (keybuffer[i][j] &0x0f) == 0x00 )
+ 146   2          {
+ 147   3            keyfinally[i][j] = 0;
+ 148   3          }
+ 149   2          else if( (keybuffer[i][j] | 0xf0) == 0xff )
+ 150   2          {
+ 151   3            keyfinally[i][j] = 1;
+ 152   3          }
+ 153   2          else
+ 154   2          {}
+ 155   2        }
+ 156   1        switch(i)
+ 157   1        {
+ 158   2          case 0:KEYOUT4 = 1;KEYOUT3 = 1;KEYOUT2 = 1;KEYOUT1 = 0;i++;break;
+ 159   2          case 1:KEYOUT4 = 1;KEYOUT3 = 1;KEYOUT2 = 0;KEYOUT1 = 1;i++;break;
+ 160   2          case 2:KEYOUT4 = 1;KEYOUT3 = 0;KEYOUT2 = 1;KEYOUT1 = 1;i++;break;
+ 161   2          case 3:KEYOUT4 = 0;KEYOUT3 = 1;KEYOUT2 = 1;KEYOUT1 = 1;i=0;break;
+ 162   2          default:break;
+ 163   2        }
+ 164   1      }
+ 165          void ledscan()
+ 166          {
+ 167   1        static unsigned char i = 0;
+ 168   1        P0 = 0xff;
+ 169   1        switch(i)
+ 170   1        {
+ 171   2          case 0:ADDR2 = 0;ADDR1 = 0;ADDR0 = 0;P0 = ledbuffer[i];i++;break;
+ 172   2          case 1:ADDR2 = 0;ADDR1 = 0;ADDR0 = 1;P0 = ledbuffer[i];i++;break;
+ 173   2          case 2:ADDR2 = 0;ADDR1 = 1;ADDR0 = 0;P0 = ledbuffer[i];i++;break;
+ 174   2          case 3:ADDR2 = 0;ADDR1 = 1;ADDR0 = 1;P0 = ledbuffer[i];i++;break;
+ 175   2          case 4:ADDR2 = 1;ADDR1 = 0;ADDR0 = 0;P0 = ledbuffer[i];i++;break;
+ 176   2          case 5:ADDR2 = 1;ADDR1 = 0;ADDR0 = 1;P0 = ledbuffer[i];i=0;break;
+ 177   2        }
+ 178   1      }  
+C51 COMPILER V9.59.0.0   MAIN                                                              08/09/2021 14:27:53 PAGE 4   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    770    ----
+   CONSTANT SIZE    =     42    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     45      21
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

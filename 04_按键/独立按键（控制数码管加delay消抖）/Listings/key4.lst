@@ -1,0 +1,77 @@
+C51 COMPILER V9.59.0.0   KEY4                                                              07/28/2021 09:29:23 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE KEY4
+OBJECT MODULE PLACED IN .\Objects\key4.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE key4.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\key4.l
+                    -st) TABS(2) OBJECT(.\Objects\key4.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          sbit ADDR0 = P1^0;
+   3          sbit ADDR1 = P1^1;
+   4          sbit ADDR2 = P1^2;
+   5          sbit ADDR3 = P1^3;
+   6          sbit ENLED = P1^4;
+   7          sbit KEY = P2^7;                //定义一个按键
+   8          unsigned char code number[]={   //定义number数组存放0-9对应的16进制编码
+   9            0xc0,0xf9,0xa4,0xb0,0x99,
+  10            0x92,0x82,0xf8,0x80,0x90
+  11           };
+  12          void delay();                   //声明延时函数delay()
+  13          void main()
+  14          {
+  15   1        unsigned char i = 0;          
+  16   1        bit backup = 1;               //backup为按键的上一个状态
+  17   1        bit keybuffer = 1;            //keybufffer为暂时保存当前按键值
+  18   1        ENLED = 0;
+  19   1        ADDR3 = 1;
+  20   1        ADDR2 = 0;
+  21   1        ADDR1 = 0;
+  22   1        ADDR0 = 0;
+  23   1        P2 = 0XF7;
+  24   1        P0 = number[i];
+  25   1        while(1)
+  26   1        {
+  27   2          keybuffer = KEY;
+  28   2          if(keybuffer != backup)        //当按键当前状态与上一个状态不同时进入
+  29   2          {
+  30   3            delay();                     //延时，实际开发中，while(1)语句中不允许存在delay这种简单的函数，会影响
+  31   3            if(KEY == keybuffer)
+  32   3            {
+  33   4              if(backup == 0)            //当按键上一个状态为0时进入
+  34   4              {
+  35   5                i++;
+  36   5                if(i == 10)              //先判断后是否等于10，后点亮小灯
+  37   5                {
+  38   6                  i = 0;
+  39   6                }
+  40   5                P0 = number[i];          //点亮小灯
+  41   5              }
+  42   4              backup = KEY;              //完成判断后，将按键当前状态赋值给backup
+  43   4            }
+  44   3          }
+  45   2        } 
+  46   1      }
+  47          void delay()                      //延时1ms，消抖
+  48          {
+  49   1        unsigned int i = 3000;
+  50   1        while(i--);
+  51   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+C51 COMPILER V9.59.0.0   KEY4                                                              07/28/2021 09:29:23 PAGE 2   
+
+   CODE SIZE        =     93    ----
+   CONSTANT SIZE    =     10    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       2
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

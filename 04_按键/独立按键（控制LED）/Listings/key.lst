@@ -1,0 +1,59 @@
+C51 COMPILER V9.59.0.0   KEY                                                               07/24/2021 18:16:56 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE KEY
+OBJECT MODULE PLACED IN .\Objects\key.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE key.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\key.lst
+                    -) TABS(2) OBJECT(.\Objects\key.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          
+   3          sbit ADDR0 = P1^0;
+   4          sbit ADDR1 = P1^1;
+   5          sbit ADDR2 = P1^2;
+   6          sbit ADDR3 = P1^3;
+   7          sbit ENLED = P1^4;
+   8          
+   9          sbit LED2 = P0^0;
+  10          sbit LED3 = P0^1;
+  11          sbit LED4 = P0^2;
+  12          sbit LED5 = P0^3;
+  13          
+  14          sbit KEY1 = P2^4;
+  15          sbit KEY2 = P2^5;
+  16          sbit KEY3 = P2^6;
+  17          sbit KEY4 = P2^7;
+  18          
+  19          void main()
+  20          {
+  21   1        ENLED = 0;
+  22   1        ADDR3 = 1;
+  23   1        ADDR2 = 1;
+  24   1        ADDR1 = 1;
+  25   1        ADDR0 = 0;
+  26   1        P2 = 0xf7;
+  27   1        
+  28   1        while(1)
+  29   1        {
+  30   2          LED2 = KEY1;
+  31   2          LED3 = KEY2;
+  32   2          LED4 = KEY3;
+  33   2          LED5 = KEY4;
+  34   2        }
+  35   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     31    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

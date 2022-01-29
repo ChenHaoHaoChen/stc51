@@ -1,0 +1,70 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              07/29/2021 16:58:56 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          unsigned long beats;
+   3          void cntbeats(unsigned long angle);
+   4          void main()
+   5          {
+   6   1        TMOD = 0X01;        //设置定时器为1模式
+   7   1        TH0 = 0XF8;         //定时2ms
+   8   1        TL0 = 0XCD;
+   9   1        TR0 = 1;            //开始定时
+  10   1        EA = 1;             //打开总中断
+  11   1        ET0 = 1;            //打开定时器T0中断
+  12   1        cntbeats(360*2+180);
+  13   1        while(1);
+  14   1      }
+  15          void cntbeats(unsigned long angle)//计算节拍函数
+  16          {
+  17   1        EA = 0; //为了避免计算节拍时进入中断，计算前将中断关闭，计算后再打开
+  18   1        beats = (angle*64*64)/360;
+  19   1        EA = 1;
+  20   1      }
+  21          void interrupttime0() interrupt 1
+  22          {
+  23   1        unsigned char code beat[8]={
+  24   1        0x0e,0x0c,0x0d,0x09,0x0b,0x03,0x07,0x06
+  25   1        };
+  26   1        static unsigned char temp;
+  27   1        static unsigned char i = 0;
+  28   1        TH0 = 0XF8;//定时器重新定时2ms             
+  29   1        TL0 = 0XCD;
+  30   1        if(beats != 0)
+  31   1        {
+  32   2          temp = P1;            //temp为中间变量
+  33   2          temp = temp & 0XF0;   //将temp低四位清零，而不影响高四位
+  34   2          temp = temp | beat[i];//给P1低四位赋值，而不影响高四位
+  35   2          P1 = temp;            
+  36   2          i++;
+  37   2          i = 0x07 & i;         //当i=8时，i=0
+  38   2          beats--;
+  39   2        }
+  40   1        else
+  41   1        {
+  42   2          P1 = 0X0F | P1;       //P1低四位清零，高四位不变
+  43   2        }
+  44   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    208    ----
+   CONSTANT SIZE    =      8    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      6       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+C51 COMPILER V9.59.0.0   MAIN                                                              07/29/2021 16:58:56 PAGE 2   
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
