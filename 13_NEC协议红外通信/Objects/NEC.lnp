@@ -1,0 +1,5 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\infrared.obj" 
+TO ".\Objects\NEC" 
+PRINT(".\Listings\NEC.m51") RAMSIZE(256) 

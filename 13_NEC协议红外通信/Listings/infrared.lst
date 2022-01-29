@@ -1,0 +1,128 @@
+C51 COMPILER V9.59.0.0   INFRARED                                                          08/29/2021 16:49:56 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE INFRARED
+OBJECT MODULE PLACED IN .\Objects\infrared.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE infrared.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\in
+                    -frared.lst) TABS(2) OBJECT(.\Objects\infrared.obj)
+
+line level    source
+
+   1          /*****************
+   2          NEC红外遥控配置程序
+   3          *****************/
+   4          #include <reg52.h>
+   5          sbit IRD = P3^3;         //NEC红外通信引脚   
+   6          unsigned char irflag = 0;//NEC红外通信接受完成标志
+   7          unsigned char ircode[4]; //NEC红外通信接受字符，0，1为用户码和用户反码
+   8          /*NEC红外通信初始化*/                         //2，3为按键码和按键反码
+   9          void Infraredinit()                           
+  10          {               
+  11   1        TMOD = TMOD & 0X0F;   //配置定时器1为1模式
+  12   1        TMOD = TMOD | 0X10;
+  13   1        TR1 = 0;              //只是强调这里采用外部中断，不加也行
+  14   1        ET1 = 0;
+  15   1        IT1 = 1;              //外部中断1触发标志位值1，即下降沿触发
+  16   1        EX1 = 1;              //打开外部中断使能
+  17   1      }
+  18          /*获取低电平时间*/
+  19          unsigned int getlowtime()
+  20          {
+  21   1        TH1 = 0;           
+  22   1        TL1 = 0;
+  23   1        TR1 = 1;               //开始定时
+  24   1        while(!IRD)
+  25   1        {
+  26   2          if(TH1 >= 0XDC)      //等待10ms仍无响应则推出
+  27   2          {
+  28   3            break;
+  29   3          }
+  30   2        }
+  31   1        TR1 = 0;               //关闭定时
+  32   1        return (TH1*256 + TL1);//返回定时时间
+  33   1      }
+  34          /*获取高电平时间*/
+  35          unsigned int gethightime()
+  36          {
+  37   1        TH1 = 0;
+  38   1        TL1 = 0;
+  39   1        TR1 = 1;               //开始定时
+  40   1        while(IRD)
+  41   1        {
+  42   2          if(TH1 >= 0XDC)      //等待10ms仍无响应则推出
+  43   2          {
+  44   3            break;
+  45   3          }
+  46   2        }
+  47   1        TR1 = 0;               //关闭定时
+  48   1        return (TH1*256 + TL1);//返回定时时间
+  49   1      }
+  50          /*外部中断1*/
+  51          void Infraedinterrupt() interrupt 2
+  52          {
+  53   1        unsigned int time;     //time为获取高低电平时间
+  54   1        unsigned char i,j;
+C51 COMPILER V9.59.0.0   INFRARED                                                          08/29/2021 16:49:56 PAGE 2   
+
+  55   1        unsigned char byte;    //红外通信字节
+  56   1        /*检测引导码中的9ms载波，范围为：8.5ms~9.5ms*/
+  57   1        time = getlowtime();   //获取载波时间（载波为低电平）
+  58   1        if( (time < 7833) || (time > 8755) )
+  59   1        {
+  60   2          IE1 = 0;
+  61   2          return;              //若不满足则退出中断
+  62   2        }
+  63   1        /*检测引导码中的4.5ms空闲，范围为：4ms~5ms*/
+  64   1        time = gethightime();  //获取空闲时间（空闲为高电平）
+  65   1        if( (time <3686 ) || (time > 4608) )
+  66   1        {
+  67   2          IE1 = 0;
+  68   2          return;              //若不满足则退出中断
+  69   2        }
+  70   1        /*循环四次分别读取4个字节的用户码，用户反码，按键码，按键反码*/
+  71   1        for(i=0;i<4;i++)
+  72   1        {
+  73   2          for(j=0;j<8;j++)
+  74   2          {
+  75   3            /*检测560us载波，范围为：280us~840us*/
+  76   3            time = getlowtime();//获取载波时间
+  77   3            if( (time <258) || (time >774) )
+  78   3            {
+  79   4              IE1 = 0;
+  80   4              return;
+  81   4            }
+  82   3            time = gethightime();//获取空闲时间
+  83   3            if( (time > 258) && (time < 774) )
+  84   3            {
+  85   4              byte = byte >> 1;  //若空闲时间为560us，范围：280us~840us，则比特置为：0
+  86   4            }
+  87   3            else if( (time > 922) && (time < 2175) )
+  88   3            {
+  89   4              byte = byte >> 1;  //若空闲时间为1.68ms，范围：1ms~2.36ms，则比特置为：1
+  90   4              byte = byte | 0X80;
+  91   4            }
+  92   3            else 
+  93   3            {
+  94   4              IE1 = 0;           
+  95   4              return;             //若都不是，则退出中断
+  96   4            }
+  97   3          }
+  98   2          ircode[i] = byte;       //循环将读取到的字节存放在数组中
+  99   2        }
+ 100   1        irflag = 1;               //红外通信完成，红外通信标志位置1
+ 101   1        IE1 = 0;                  //外部中断1中断请求标志位清零
+ 102   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    310    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      5    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
