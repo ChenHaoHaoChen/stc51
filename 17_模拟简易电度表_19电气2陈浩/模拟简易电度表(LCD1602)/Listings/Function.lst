@@ -1,0 +1,13 @@
+C51 COMPILER V9.59.0.0   FUNCTION                                                          11/29/2021 08:01:55 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE FUNCTION
+OBJECT MODULE PLACED IN .\Objects\Function.obj
+COMPILER INVOKED BY: D:\keil5\C51\BIN\C51.EXE Function.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\Fu
+                    -nction.lst) TABS(2) OBJECT(.\Objects\Function.obj)
+
+line level    source
+
+*** ERROR C318 OF Function.c: can't open file 'Function.c'
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

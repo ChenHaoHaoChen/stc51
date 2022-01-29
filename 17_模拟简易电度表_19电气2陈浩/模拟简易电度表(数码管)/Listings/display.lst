@@ -1,0 +1,163 @@
+C51 COMPILER V9.59.0.0   DISPLAY                                                           12/06/2021 20:39:55 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE DISPLAY
+OBJECT MODULE PLACED IN .\Objects\display.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE display.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\dis
+                    -play.lst) TABS(2) OBJECT(.\Objects\display.obj)
+
+line level    source
+
+   1          /*****************************
+   2          电度表三大功能及数码管显示程序
+   3          *****************************/
+   4          #include <reg52.h>
+   5          #include "key.h"
+   6          extern void EEPROMwritebyte(unsigned char address,unsigned char dat);
+   7          extern unsigned int ELEFEE;         //电费,默认为0.52元/度
+   8          extern unsigned int ELECON;          //用电量
+   9          extern unsigned int FEE;             //总电费
+  10          extern unsigned char time[8];
+  11          extern unsigned char keyfinally[4];  //按键终值(1为弹起，0为按下)
+  12          unsigned char displaybuff[8] = {  
+  13            0XBF,0XBF,0XBF,0XBF,0XBF,0XBF,0XBF,0XBF
+  14          };
+  15          unsigned char code number[20] = {  //共阳数码管显示译码
+  16            0xc0,0xf9,0xa4,0xb0,0x99,        //不显示小数点0~9
+  17            0x92,0x82,0xf8,0x80,0x90, 
+  18            0x40,0x79,0x24,0x30,0x19,        //显示小数点0~9
+  19            0x12,0x02,0x78,0x00,0x10
+  20          };
+  21          /**********启动状态数码管显示**********/
+  22          void startdisplay()
+  23          {
+  24   1        if(bit_start == 1 && bit_extra == 1)
+  25   1        {
+  26   2          displaybuff[7] = number[ELEFEE/100%10 + 10];  //电费显示
+  27   2          displaybuff[6] = number[ELEFEE/10%10];
+  28   2          displaybuff[5] = number[ELEFEE%10];
+  29   2          displaybuff[4] = 0XFF;                                                   
+  30   2          if(ELECON/1000%10 == 0)                       //用电量显示＋高位灭零                       
+  31   2          {
+  32   3            displaybuff[3] = 0XFF;  
+  33   3          }
+  34   2          else
+  35   2          {
+  36   3            displaybuff[3] = number[ELECON/1000%10];
+  37   3          }
+  38   2          if((ELECON/100%10 == 0) && (ELECON/1000%10 == 0))
+  39   2          {
+  40   3            displaybuff[2] = 0XFF;  
+  41   3          }
+  42   2          else
+  43   2          {
+  44   3            displaybuff[2] = number[ELECON/100%10];
+  45   3          }
+  46   2          displaybuff[1] = number[ELECON/10%10 + 10];
+  47   2          displaybuff[0] = number[ELECON%10];
+  48   2        }
+  49   1      }
+  50          /**********时钟状态数码管显示**********/
+  51          void timedisplay()
+  52          {
+  53   1        if(bit_time == 1 && bit_extra == 1)
+  54   1        {
+C51 COMPILER V9.59.0.0   DISPLAY                                                           12/06/2021 20:39:55 PAGE 2   
+
+  55   2          displaybuff[7] = number[time[2] >> 4];
+  56   2          displaybuff[6] = number[time[2] & 0X0F];
+  57   2          displaybuff[5] = 0XBF;
+  58   2          displaybuff[4] = number[time[1] >> 4];
+  59   2          displaybuff[3] = number[time[1] & 0X0F];
+  60   2          displaybuff[2] = 0XBF;
+  61   2          displaybuff[1] = number[time[0] >> 4];
+  62   2          displaybuff[0] = number[time[0] & 0X0F];
+  63   2        }
+  64   1      }
+  65          /**********电费结算数码管显示**********/
+  66          void enddisplay()
+  67          {
+  68   1        if(bit_end == 1 && bit_extra == 1)
+  69   1        {
+  70   2          FEE = ELEFEE * ELECON;
+  71   2          if(ELECON/100%10 == 0)
+  72   2          {
+  73   3             displaybuff[7] = 0XFF;
+  74   3          }
+  75   2          else
+  76   2          {
+  77   3             displaybuff[7] = number[ELECON/100%10];
+  78   3          }
+  79   2          displaybuff[6] = number[ELECON/10%10 + 10];
+  80   2          displaybuff[5] = number[ELECON%10];
+  81   2          displaybuff[4] = 0XFF;
+  82   2          if(FEE/10000%10 == 0)
+  83   2          {
+  84   3            displaybuff[3] = 0XFF;
+  85   3          }
+  86   2          else
+  87   2          {
+  88   3            displaybuff[3] = number[FEE/10000%10];
+  89   3          }
+  90   2          displaybuff[2] = number[FEE/1000%10 + 10];
+  91   2          displaybuff[1] = number[FEE/100%10];
+  92   2          displaybuff[0] = number[FEE/10%10];
+  93   2          ELECON = 0;    //用电量清零
+  94   2          bit_end = 0;   //end标志位置0，下次不刷新，否则电费结算只显示1ms，即全为0
+  95   2        }
+  96   1      }
+  97          /**********修改电费数码管显示**********/
+  98          void changedisplay()
+  99          {
+ 100   1        if(ELECON == 0 && bit_change == 1)
+ 101   1        {
+ 102   2          bit_extra = 0;
+ 103   2          displaybuff[0] = 0XBF;
+ 104   2          displaybuff[1] = 0XBF;
+ 105   2          displaybuff[2] = 0XBF;
+ 106   2          displaybuff[3] = 0XBF;
+ 107   2          displaybuff[4] = 0XFF;
+ 108   2          displaybuff[5] = number[ELEFEE%10];
+ 109   2          displaybuff[6] = number[ELEFEE/10%10];
+ 110   2          displaybuff[7] = number[ELEFEE/100%10 + 10];
+ 111   2        }
+ 112   1        else if(ELECON == 0 && bit_change == 0 && bit_extra == 0)
+ 113   1        {
+ 114   2          EEPROMwritebyte(0X03,ELEFEE);
+ 115   2          bit_extra = 1;
+ 116   2        }
+C51 COMPILER V9.59.0.0   DISPLAY                                                           12/06/2021 20:39:55 PAGE 3   
+
+ 117   1      }
+ 118          /**********数码管显示函数**********/
+ 119          void display()
+ 120          {
+ 121   1        static unsigned char i = 0;
+ 122   1        P0 = 0XFF;  //显示消隐
+ 123   1        switch(i)
+ 124   1        { 
+ 125   2          case 0: P0 = displaybuff[0]; P1 = 0X7F; i++; break;
+ 126   2          case 1: P0 = displaybuff[1]; P1 = 0XBF; i++; break;
+ 127   2          case 2: P0 = displaybuff[2]; P1 = 0XDF; i++; break;
+ 128   2          case 3: P0 = displaybuff[3]; P1 = 0XEF; i++; break;
+ 129   2          case 4: P0 = displaybuff[4]; P1 = 0XF7; i++; break;
+ 130   2          case 5: P0 = displaybuff[5]; P1 = 0XFB; i++; break;
+ 131   2          case 6: P0 = displaybuff[6]; P1 = 0XFD; i++; break;
+ 132   2          case 7: P0 = displaybuff[7]; P1 = 0XFE; i=0; break;
+ 133   2          default: break;
+ 134   2        }
+ 135   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    855    ----
+   CONSTANT SIZE    =     20    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

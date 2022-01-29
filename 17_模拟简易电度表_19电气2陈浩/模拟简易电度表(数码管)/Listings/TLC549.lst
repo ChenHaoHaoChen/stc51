@@ -1,0 +1,97 @@
+C51 COMPILER V9.59.0.0   TLC549                                                            12/06/2021 20:39:54 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE TLC549
+OBJECT MODULE PLACED IN .\Objects\TLC549.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE TLC549.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\TLC5
+                    -49.lst) TABS(2) OBJECT(.\Objects\TLC549.obj)
+
+line level    source
+
+   1          /**************************
+   2                TLC549通信程序
+   3          **************************/
+   4          #include <reg52.h>
+   5          #include <intrins.h>
+   6          sbit CLK = P2^0;
+   7          sbit ADO = P2^1;
+   8          sbit CS = P2^2;
+   9          sbit D1501 = P3^3; //D1501照明灯
+  10          unsigned char RV;                 //光敏电阻电压采集值
+  11          unsigned char ADsampling();
+  12          /**********AD扫描**********/
+  13          void ADscan()
+  14          {
+  15   1        if(RV < 64)  //64即为1.25V
+  16   1        {
+  17   2          D1501 = 0;
+  18   2        }
+  19   1        else
+  20   1        {
+  21   2          D1501 = 1;
+  22   2        }
+  23   1      }
+  24          /**********AD刷新函数(每100ms刷新)**********/
+  25          void ADrefresh()
+  26          {
+  27   1        static unsigned char bit_AD = 0; 
+  28   1        bit_AD++;
+  29   1        if(bit_AD == 50)
+  30   1        {
+  31   2          bit_AD = 0;
+  32   2          RV = ADsampling();
+  33   2        }
+  34   1      }
+  35          /**********AD采集函数**********/
+  36          unsigned char ADsampling()
+  37          {
+  38   1        unsigned char i,temp = 0;
+  39   1        CLK = 0;
+  40   1        //AD_out = 1;
+  41   1        _nop_();
+  42   1        _nop_();
+  43   1         CS = 0;
+  44   1        _nop_();
+  45   1        _nop_();
+  46   1        _nop_();
+  47   1        _nop_();
+  48   1        if(ADO == 1)
+  49   1        {
+  50   2          temp = temp + 1;
+  51   2        }
+  52   1        for(i=0;i<8;i++)
+  53   1        {
+  54   2          CLK = 1;
+C51 COMPILER V9.59.0.0   TLC549                                                            12/06/2021 20:39:54 PAGE 2   
+
+  55   2          _nop_();
+  56   2          _nop_();
+  57   2          CLK = 0;
+  58   2          _nop_();
+  59   2          _nop_();
+  60   2          if(i != 7)
+  61   2          {
+  62   3            temp = temp << 1;
+  63   3            if(ADO == 1)
+  64   3            {
+  65   4              temp = temp + 1;
+  66   4            }
+  67   3          }
+  68   2        }
+  69   1        CS = 1;
+  70   1        return temp;
+  71   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     89    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,118 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              12/29/2021 20:16:08 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          /*******************************************************
+   2          *            模拟简易电度表(LCD1602显示)
+   3                         
+   4          *            19电气2   陈浩   2019314230
+   5          
+   6          *  L1(指示灯)：          P1.3;
+   7          *  LED1501(照明灯)：     P1.4;
+   8          *  按键控制(K17~K20)：   P3.4~P3.7;
+   9          *  EEPROM(AT24C02)：     SCL(P2.6),SDA(P2.7);
+  10          *  A/D转换(TLC549)：     CLK(P2.0),DO(P2.1),CS(P2.2);
+  11          *  实时时钟(DS1302)：    RST(P2.3),SCLK(P2.4),I/O(P2.5);
+  12          *  LCD1602显示：         DB(P0),RS(P1.0),RW(P1.1),EN(P1.2);
+  13          *******************************************************/
+  14          #include <reg52.h>           //默认头文件
+  15          #include "key.h"             //按键配置头文件
+  16          #include "DS1302.h"          //DS1302配置头文件
+  17          #include "EEPROM.h"          //EEPROM配置头文件
+  18          #include "TLC549.h"          //TLC549配置头文件
+  19          #include "LCD1602.h"         //LCD1602配置头文件
+  20          #include "T0T1.h"            //定时器T0T1配置头文件
+  21          #include "display.h"         //三大功能及数码管显示配置头文件
+  22          
+  23          unsigned int ELEFEE;         //电费,默认为0.52元/度
+  24          unsigned int ELECON = 0;     //用电量
+  25          unsigned int FEE = 0;        //总电费
+  26          unsigned char time[8];       //DS1302读取时间暂存数组
+  27          bit flag_100ms = 0;          //100ms刷新标志位
+  28          
+  29          /**********主函数**********/
+  30          void main()
+  31          {
+  32   1        EA = 1;                    //开总中断
+  33   1        configtime0(1);            //配置T0定时器定时1ms
+  34   1        configtime1(2);            //配置T1定时器定时2ms
+  35   1        DS1302init();              //DS1302初始化
+  36   1        EEPROMinit();              //EEPROM初始化
+  37   1        LCD1602init();             //LCD1602初始化
+  38   1        LCD1602show(3,0,"MoNiJianYi");  //开机显示字符页面
+  39   1        LCD1602show(3,1,"DianDuBiao");
+  40   1        P3 = P3 | 0XF0;            //按键初始化：拉高四个按键电平
+  41   1        while(1)
+  42   1        {
+  43   2          keyscan();               //按键扫描
+  44   2          ADscan();                //AD扫描
+  45   2          if(flag_100ms == 1)      //执行周期为100ms
+  46   2          {
+  47   3            flag_100ms = 0;
+  48   3            DS1302burstread(time); //DS1302burst模式读时间
+  49   3            startdisplay();        //开始计费显示
+  50   3            timedisplay();         //时间状态显示
+  51   3            enddisplay();          //结算电费显示
+  52   3            changedisplay();       //修改电费显示
+  53   3          }
+  54   2        }
+C51 COMPILER V9.59.0.0   MAIN                                                              12/29/2021 20:16:08 PAGE 2   
+
+  55   1      }
+  56          /**********电费自加函数(每1s加0.1度)**********/
+  57          void ELECONadd()
+  58          {
+  59   1        static unsigned int bit_1s = 0;
+  60   1        if( (bit_start == 1) || (bit_time == 1))
+  61   1        {
+  62   2          bit_1s++;
+  63   2          if(bit_1s == 500)
+  64   2          {
+  65   3            bit_1s = 0;
+  66   3            ELECON++;
+  67   3          }
+  68   2        }
+  69   1      }
+  70          /**********T0定时器中断函数**********/
+  71          void interruptt0() interrupt 1
+  72          {
+  73   1        static unsigned char cnt = 0;
+  74   1        TH0 = TH0R;    //T0定时器重新定时1ms
+  75   1        TL0 = TL0R;
+  76   1        ADrefresh();   //AD采集电压
+  77   1        cnt++;
+  78   1        if(cnt == 100)
+  79   1        {
+  80   2          flag_100ms = 1;
+  81   2          cnt = 0;
+  82   2        }
+  83   1      }
+  84          /**********T1定时器中断函数**********/
+  85          void interruptt1() interrupt 3
+  86          {
+  87   1        TH1 = TH1R;    //T1定时器重新定时2ms
+  88   1        TL1 = TL1R;
+  89   1        keybuff();     //按键中断消抖
+  90   1        ELECONadd();   //电费自加函数0.1度/秒
+  91   1      }
+  92          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    265    ----
+   CONSTANT SIZE    =     22    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     17    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,113 @@
+C51 COMPILER V9.59.0.0   EEPROM                                                            12/06/2021 20:39:55 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE EEPROM
+OBJECT MODULE PLACED IN .\Objects\EEPROM.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE EEPROM.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\EEPR
+                    -OM.lst) TABS(2) OBJECT(.\Objects\EEPROM.obj)
+
+line level    source
+
+   1          /**************************
+   2            EEPROM读写及初始化程序
+   3          **************************/
+   4          #include <reg52.h>
+   5          #include <intrins.h>
+   6          #include "I2C.h"
+   7          extern unsigned int ELEFEE; 
+   8          /*读取EEPROM中一个字节，address为地址*/
+   9          unsigned char EEPROMreadbyte(unsigned char address)
+  10          {
+  11   1        unsigned char dat;
+  12   1        I2Cstart();
+  13   1        I2Cwrite(0X50<<1);
+  14   1        I2Cwrite(address);
+  15   1        I2Cstart();
+  16   1        I2Cwrite((0X50<<1) | 0X01);
+  17   1        dat = I2CreadNACK();
+  18   1        I2Cstop();
+  19   1        return dat;
+  20   1      }
+  21          /*写入EEPROM中一个字节，address为地址，dat为一字节数据*/
+  22          void EEPROMwritebyte(unsigned char address,unsigned char dat)
+  23          {
+  24   1        I2Cstart();
+  25   1        I2Cwrite(0X50<<1);
+  26   1        I2Cwrite(address);
+  27   1        I2Cwrite(dat);
+  28   1        I2Cstop();
+  29   1      }
+  30          /**********EEPROM初始化**********/
+  31          void EEPROMinit()
+  32          {
+  33   1         ELEFEE = EEPROMreadbyte(0X03);
+  34   1      }
+  35          ///**********EEPROM读取函数,buf-数据接收指针,addr-EEPROM中的起始地址，len-读取长度**********/
+  36          //void EEPROMread(unsigned char *buf, unsigned char addr, unsigned char len)
+  37          //{
+  38          //  do
+  39          //  {                         //用寻址操作查询当前是否可进行读写操作
+  40          //  I2Cstart();
+  41          //  if(I2Cwrite(0x50<<1))     //应答则跳出循环，非应答则进行下一次查询
+  42          //  {
+  43          //     break;
+  44          //  }
+  45          //  I2Cstop();
+  46          //  }while(1);
+  47          //  I2Cwrite(addr);           //写入起始地址
+  48          //  I2Cstart();               //发送重复启动信号
+  49          //  I2Cwrite((0x50<<1)|0x01); //寻址器件，后续为读操作
+  50          //  while (len > 1)           //连续读取 len-1 个字节
+  51          //  {
+  52          //    *buf++ = I2CreadACK();  //最后字节之前为读取操作+应答
+  53          //    len--;
+  54          //  }
+C51 COMPILER V9.59.0.0   EEPROM                                                            12/06/2021 20:39:55 PAGE 2   
+
+  55          //  *buf = I2CreadNAK();      //最后一个字节为读取操作+非应答
+  56          //  I2Cstop();
+  57          //}
+  58          
+  59          ///**********EEPROM写入函数,buf-源数据指针,addr-EEPROM中的起始地址,len-写入长度**********/
+  60          //void EEPROMwrite(unsigned char *buf, unsigned char addr, unsigned char len)
+  61          //{
+  62          //  while(len > 0)
+  63          //  {
+  64          //                            //等待上次写入操作完成
+  65          //  do{                       //用寻址操作查询当前是否可进行读写操作
+  66          //  I2Cstart();
+  67          //  if(I2Cwrite(0x50<<1))     //应答则跳出循环，非应答则进行下一次查询
+  68          //  {
+  69          //     break;
+  70          //  }
+  71          //  I2Cstop();
+  72          //  }while(1);
+  73          //                            //按页写模式连续写入字节
+  74          //  I2Cwrite(addr);           //写入起始地址
+  75          //  while(len > 0)
+  76          //  {
+  77          //  I2Cwrite(*buf++);         //写入一个字节数据
+  78          //  len--;                    //待写入长度计数递减
+  79          //  addr++;                   //EEPROM地址递增
+  80          //  if((addr&0x07) == 0)      //检查地址是否到达页边界,24C02 每页 8 字节，
+  81          // {                          //所以检测低 3 位是否为零即可
+  82          //    break;                  //到达页边界时，跳出循环，结束本次写操作
+  83          // }
+  84          // }
+  85          // I2Cstop();
+  86          // }
+  87          //}
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     70    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

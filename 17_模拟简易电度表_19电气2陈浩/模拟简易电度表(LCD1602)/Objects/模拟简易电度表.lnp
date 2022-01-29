@@ -1,0 +1,11 @@
+".\Objects\main.obj",
+".\Objects\TLC549.obj",
+".\Objects\DS1302.obj",
+".\Objects\key.obj",
+".\Objects\I2C.obj",
+".\Objects\EEPROM.obj",
+".\Objects\T0T1.obj",
+".\Objects\display.obj",
+".\Objects\LCD1602.obj" 
+TO ".\Objects\模拟简易电度表" 
+PRINT(".\Listings\模拟简易电度表.m51") RAMSIZE(256) 

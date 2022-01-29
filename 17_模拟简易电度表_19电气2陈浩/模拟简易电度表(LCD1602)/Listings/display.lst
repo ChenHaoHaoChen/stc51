@@ -1,0 +1,212 @@
+C51 COMPILER V9.59.0.0   DISPLAY                                                           12/29/2021 20:16:09 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE DISPLAY
+OBJECT MODULE PLACED IN .\Objects\display.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE display.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\dis
+                    -play.lst) TABS(2) OBJECT(.\Objects\display.obj)
+
+line level    source
+
+   1          /*****************************
+   2          电度表三大功能及显示程序
+   3          *****************************/
+   4          #include <reg52.h>
+   5          #include "key.h"
+   6          #include "main.h"
+   7          #include "EEPROM.h"
+   8          #include "LCD1602.h"
+   9          
+  10          unsigned char strstart[16]; //启动状态显示数组
+  11          unsigned char strtime[16];  //时间状态显示数组
+  12          unsigned char strend[16];   //结费状态显示数组
+  13          unsigned char strchange[16];//修改电费状态显示数组
+  14          
+  15          /**********启动状态显示**********/
+  16          void startdisplay()
+  17          {
+  18   1        static unsigned char LCD1602buff[2];
+  19   1        if(bit_start == 1 && bit_extra == 1)
+  20   1        {
+  21   2          L1 = 0;  //启动指示灯
+  22   2          if(ELECON/1000%10 == 0)  //用电量高位灭零                                         
+  23   2          {
+  24   3            LCD1602buff[0] = ' '; 
+  25   3          }
+  26   2          else
+  27   2          {
+  28   3            LCD1602buff[0] = ELECON/1000%10 + '0';
+  29   3          }
+  30   2          if((ELECON/100%10 == 0) && (ELECON/1000%10 == 0))
+  31   2          {
+  32   3            LCD1602buff[1] = ' '; 
+  33   3          }
+  34   2          else
+  35   2          {
+  36   3            LCD1602buff[1] = ELECON/100%10 + '0';
+  37   3          }
+  38   2          
+  39   2          LCD1602show(0,0,"DanJia:    Used:");  //LCD1602第1行显示"DanJia:    Used:"
+  40   2          
+  41   2          strstart[0] = ELEFEE/100%10 + '0';
+  42   2          strstart[1] = '.';
+  43   2          strstart[2] = ELEFEE/10%10 + '0';
+  44   2          strstart[3] = ELEFEE%10 + '0';
+  45   2          strstart[4] = 'Y';
+  46   2          strstart[5] = '/';
+  47   2          strstart[6] = 'D';
+  48   2          strstart[7] = ' ';
+  49   2          strstart[8] = ' ';
+  50   2          strstart[9] = ' ';
+  51   2          strstart[10] = LCD1602buff[0];
+  52   2          strstart[11] = LCD1602buff[1];
+  53   2          strstart[12] = ELECON/10%10 + '0';
+  54   2          strstart[13] =  '.';
+C51 COMPILER V9.59.0.0   DISPLAY                                                           12/29/2021 20:16:09 PAGE 2   
+
+  55   2          strstart[14] = ELECON%10 + '0';
+  56   2          strstart[15] = 'D';
+  57   2          strstart[16] = '\0';
+  58   2          LCD1602show(0,1,strstart);  //LCD1602第2行电费及用电量显示
+  59   2          
+  60   2          ELECONaccident();
+  61   2        }
+  62   1      }
+  63          /**********时钟状态显示**********/
+  64          void timedisplay()
+  65          {
+  66   1        if(bit_time == 1 && bit_extra == 1)
+  67   1        {
+  68   2          L1 = 0;  //启动指示灯
+  69   2          strtime[0] = ' ';
+  70   2          strtime[1] = ' ';
+  71   2          strtime[2] = ' ';
+  72   2          strtime[3] = '2';
+  73   2          strtime[4] = '0';
+  74   2          strtime[5] = (time[6] >> 4) + '0';
+  75   2          strtime[6] = (time[6] & 0X0F) + '0';
+  76   2          strtime[7] = '-';
+  77   2          strtime[8] = (time[4] >> 4) + '0';
+  78   2          strtime[9] = (time[4] & 0X0F) + '0';
+  79   2          strtime[10] = '-';
+  80   2          strtime[11] = (time[3] >> 4) + '0';
+  81   2          strtime[12] = (time[3] & 0X0F) + '0';
+  82   2          strtime[13] = ' ';
+  83   2          strtime[14] = ' ' ;
+  84   2          strtime[15] = ' ';
+  85   2          strtime[15] = '\0';
+  86   2          LCD1602show(0,0,strtime);  //LCD1602第1行年月日显示
+  87   2          
+  88   2          strtime[0] = ' ';
+  89   2          strtime[1] = ' ';
+  90   2          strtime[2] = ' ';
+  91   2          strtime[3] = ' ';
+  92   2          strtime[4] = (time[2] >> 4) + '0';
+  93   2          strtime[5] = (time[2] & 0X0F) + '0';
+  94   2          strtime[6] = ':';
+  95   2          strtime[7] = (time[1] >> 4) + '0';
+  96   2          strtime[8] = (time[1] & 0X0F) + '0';
+  97   2          strtime[9] = ':';
+  98   2          strtime[10] = (time[0] >> 4) + '0';
+  99   2          strtime[11] = (time[0] & 0X0F) + '0';
+ 100   2          strtime[12] = ' ';
+ 101   2          strtime[13] = ' ';
+ 102   2          strtime[14] = ' ';
+ 103   2          strtime[15] = ' ';
+ 104   2          strtime[16] = '\0';
+ 105   2          LCD1602show(0,1,strtime);  //LCD1602第2行时分秒显示
+ 106   2          
+ 107   2          ELECONaccident();
+ 108   2        }
+ 109   1      }
+ 110          /**********电费结算显示**********/
+ 111          void enddisplay()
+ 112          {
+ 113   1        static unsigned char LCD1602buff[3];
+ 114   1        if(bit_end == 1 && bit_extra == 1)
+ 115   1        {
+ 116   2          L1 = 1;  //关闭指示灯
+C51 COMPILER V9.59.0.0   DISPLAY                                                           12/29/2021 20:16:09 PAGE 3   
+
+ 117   2          LCD1602clearscreen();
+ 118   2          FEE = ELEFEE * ELECON;
+ 119   2          if(ELECON/100%10 == 0)  //用电量高位灭零
+ 120   2          {
+ 121   3            LCD1602buff[0] = ' ';
+ 122   3          }
+ 123   2          else
+ 124   2          {
+ 125   3            LCD1602buff[0] = ELECON/100%10 + '0';
+ 126   3          }
+ 127   2          
+ 128   2          if(FEE/10000%10 == 0)   //电费总价高位灭零                                        
+ 129   2          {
+ 130   3            LCD1602buff[1] = ' '; 
+ 131   3          }
+ 132   2          else
+ 133   2          {
+ 134   3            LCD1602buff[1] = FEE/10000%10 + '0';
+ 135   3          }
+ 136   2          
+ 137   2          LCD1602show(0,0,"XiaoHao:ZongJia:");  //LCD1602第1行显示"XiaoHao:ZongJia:"
+ 138   2          
+ 139   2          strend[0] = LCD1602buff[0];
+ 140   2          strend[1] = ELECON/10%10 + '0';
+ 141   2          strend[2] = '.';
+ 142   2          strend[3] = ELECON%10 + '0';
+ 143   2          strend[4] = 'D';
+ 144   2          strend[5] = ' ';
+ 145   2          strend[6] = ' ';
+ 146   2          strend[7] = ' ';
+ 147   2          strend[8] = ' ';
+ 148   2          strend[9] = ' ';
+ 149   2          strend[10] = LCD1602buff[1];
+ 150   2          strend[11] = FEE/1000%10 + '0';
+ 151   2          strend[12] = '.';
+ 152   2          strend[13] = FEE/100%10 + '0';
+ 153   2          strend[14] = FEE/10%10 + '0';
+ 154   2          strend[15] = 'Y';
+ 155   2          strend[16] = '\0';
+ 156   2          LCD1602show(0,1,strend);  //LCD1602第二行显示用电量及总价
+ 157   2          ELECON = 0;    //用电量清零
+ 158   2          bit_end = 0;   //bit_end标志位置0，下次不刷新，否则电费结算只显示1ms，即全为0
+ 159   2        }
+ 160   1      }
+ 161          /**********修改电费显示**********/
+ 162          void changedisplay()
+ 163          {
+ 164   1        if(ELECON == 0 && bit_change == 1)
+ 165   1        {
+ 166   2          L1 = 1;  //关闭指示灯
+ 167   2          bit_extra = 0;
+ 168   2          LCD1602show(0,0,"XiuGaiDianFei:");  //LCD1602第1行显示"XiuGaiDianFei:"
+ 169   2          strchange[0] = ELEFEE/100%10 + '0';
+ 170   2          strchange[1] = '.';
+ 171   2          strchange[2] = ELEFEE/10%10 + '0';
+ 172   2          strchange[3] = ELEFEE%10 + '0';
+ 173   2          strchange[4] = 'Y';
+ 174   2          strchange[5] = '\0';
+ 175   2          LCD1602show(0,1,strchange);
+ 176   2        }
+ 177   1        else if(ELECON == 0 && bit_change == 0 && bit_extra == 0)
+ 178   1        {
+C51 COMPILER V9.59.0.0   DISPLAY                                                           12/29/2021 20:16:09 PAGE 4   
+
+ 179   2          EEPROMwritebyte(0X04,ELEFEE);  //保存修改后电费至EEPROM中
+ 180   2          bit_extra = 1;
+ 181   2        }
+ 182   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    874    ----
+   CONSTANT SIZE    =     49    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     69    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
