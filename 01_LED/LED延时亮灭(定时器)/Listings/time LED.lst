@@ -1,0 +1,64 @@
+C51 COMPILER V9.59.0.0   TIME_LED                                                          07/20/2021 11:23:20 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE TIME_LED
+OBJECT MODULE PLACED IN .\Objects\time LED.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE time LED.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\ti
+                    -me LED.lst) TABS(2) OBJECT(.\Objects\time LED.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          
+   3          sbit LED = P0^0;
+   4          sbit ADDR0 = P1^0;
+   5          sbit ADDR1 = P1^1;
+   6          sbit ADDR2 = P1^2;
+   7          sbit ADDR3 = P1^3;
+   8          sbit ENLED = P1^4;
+   9          
+  10          void main()
+  11          {
+  12   1        unsigned int cnt=0;
+  13   1        ENLED = 0;
+  14   1        ADDR3 = 1;
+  15   1        ADDR2 = 1;
+  16   1        ADDR1 = 1;
+  17   1        ADDR0 = 0;
+  18   1        LED = 0;
+  19   1        
+  20   1        TMOD = 0x01;       //TMOD设置为0x01即为1模式
+  21   1        TH0 = 0xdc;        //TH0初值为0xdc，到0xff为10ms
+  22   1        TL0 = 0x00;
+  23   1        TR0 = 1;           //TRO置1，定时器开始定时
+  24   1        
+  25   1        while(1)
+  26   1        {
+  27   2          if (TF0 == 1)    //当TF0=1，即定时器发生溢出
+  28   2          {
+  29   3            TH0 = 0xdc;    //复位
+  30   3            TL0 = 0x00;    //复位
+  31   3            TF0 = 0;       //复位
+  32   3            cnt++;         //cnt自加
+  33   3            if (cnt == 600)//当cnt=600，即定时600*10ms=1s
+  34   3            {
+  35   4              cnt = 0;     //cnt复位
+  36   4              LED=~LED;    //灭6s后LED亮六秒，以此反复 
+  37   4            }
+  38   3          }
+  39   2        }
+  40   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     54    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

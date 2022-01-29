@@ -1,0 +1,147 @@
+C51 COMPILER V9.59.0.0   LEDTUBEPOINT                                                      07/23/2021 12:27:39 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE LEDTUBEPOINT
+OBJECT MODULE PLACED IN .\Objects\ledtubepoint.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE ledtubepoint.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listing
+                    -s\ledtubepoint.lst) TABS(2) OBJECT(.\Objects\ledtubepoint.obj)
+
+line level    source
+
+   1          //存在点阵鬼影以及LED鬼影，由于中断0和中断1分别以1ms和4ms刷新，
+   2          //当中断0刷新时会对中断1控制的点阵产生影响
+   3          //当中断1刷新时会对中断0控制的数码管和LED产生影响
+   4          //待改进：2021.7.23
+   5          #include <reg52.h>
+   6          sbit ADDR0 = P1^0;
+   7          sbit ADDR1 = P1^1;
+   8          sbit ADDR2 = P1^2;
+   9          sbit ADDR3 = P1^3;
+  10          sbit ENLED = P1^4;
+  11          unsigned int cnt = 0;
+  12          unsigned long sec = 0;
+  13          unsigned char code number[]={        //数码管显示译码
+  14            0xc0,0xf9,0xa4,0xb0,0x99,
+  15            0x92,0x82,0xf8,0x80,0x90
+  16            };
+  17          unsigned char buffer[]={
+  18            0xff,0xff,0xff,0xff,0xff,0xff,0xff //数码管显示缓冲区
+  19            };
+  20          unsigned char image[]={              //点阵显示数组
+  21            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  22            0xFF,0xC3,0xE7,0xE7,0xE7,0xE7,0xE7,0xC3,
+  23            0xFF,0x99,0x00,0x00,0x00,0x81,0xC3,0xE7,
+  24            0xFF,0x99,0x99,0x99,0x99,0x99,0x81,0xC3,
+  25            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF
+  26           };
+  27          void main()
+  28          {
+  29   1        static unsigned char j1 = 0;       //j用于LED显示移位变量                       
+  30   1        EA = 1;                            //打开T0与T1中断
+  31   1        ET0 = 1;
+  32   1        ET1 = 1;
+  33   1        
+  34   1        TMOD = 0x01;
+  35   1        TH0 = 0xfc;                        //T0定时器，定时1ms
+  36   1        TL0 = 0x67;
+  37   1        TR0 = 1;
+  38   1        
+  39   1        TH1 = 0xf1;                        //T1定时器，定时4ms
+  40   1        TL1 = 0x9a;
+  41   1        TR1 = 1;
+  42   1        
+  43   1        ENLED = 0;                         //74138低电平使能端打开
+  44   1        
+  45   1        while(1)
+  46   1        {
+  47   2          if(cnt == 1000)                  //对1ms计数，当cnt=1000,即1s时，用buffer数组存放数码管1-6存放的数字
+  48   2          {
+  49   3            cnt = 0;
+  50   3            sec++;
+  51   3            buffer[0] = number[sec%10];
+  52   3            buffer[1] = number[sec/10%10];
+  53   3            buffer[2] = number[sec/100%10];
+  54   3            buffer[3] = number[sec/1000%10];
+C51 COMPILER V9.59.0.0   LEDTUBEPOINT                                                      07/23/2021 12:27:39 PAGE 2   
+
+  55   3            buffer[4] = number[sec/10000%10];
+  56   3            buffer[5] = number[sec/100000%10];
+  57   3            buffer[6] = ~(0x01<<j1);      //led显示部分
+  58   3            j1++;
+  59   3            if(j1 == 8)
+  60   3            {
+  61   4              j1 = 0;
+  62   4            }
+  63   3          }
+  64   2        }
+  65   1      }
+  66          
+  67          void interrupttime0() interrupt 1  //中断0用于显示数码管和LED，1ms刷新一次
+  68          {
+  69   1        static unsigned char i1 = 0;     //静态变量初次进入赋值0，下次进入不再赋值0，可直接跳过
+  70   1        ADDR3 = 1;
+  71   1        TH0 = 0xfc;
+  72   1        TL0 = 0x67;
+  73   1        P0 = 0xff;
+  74   1        cnt++;
+  75   1        switch(i1)
+  76   1        {
+  77   2          case 0:ADDR2 = 0;ADDR1 = 0;ADDR0 = 0;P0 = buffer[0];i1++;break;
+  78   2          case 1:ADDR2 = 0;ADDR1 = 0;ADDR0 = 1;P0 = buffer[1];i1++;break;
+  79   2          case 2:ADDR2 = 0;ADDR1 = 1;ADDR0 = 0;P0 = buffer[2];i1++;break;
+  80   2          case 3:ADDR2 = 0;ADDR1 = 1;ADDR0 = 1;P0 = buffer[3];i1++;break;
+  81   2          case 4:ADDR2 = 1;ADDR1 = 0;ADDR0 = 0;P0 = buffer[4];i1++;break;
+  82   2          case 5:ADDR2 = 1;ADDR1 = 0;ADDR0 = 1;P0 = buffer[5];i1++;break;
+  83   2          case 6:ADDR2 = 1;ADDR1 = 1;ADDR0 = 0;P0 = buffer[6];i1=0;break;
+  84   2        }
+  85   1      }
+  86          
+  87          void interrupttime1() interrupt 3  //中断1用于显示点阵，4ms刷新一次
+  88          {
+  89   1        static unsigned char i2 = 0;     //静态变量初次进入赋值0，下次进入不再赋值0，可直接跳过
+  90   1        static unsigned char j2 = 0;
+  91   1        static unsigned char tms = 0;
+  92   1        ADDR3 = 0;
+  93   1        TH1 = 0xf1;
+  94   1        TL1 = 0x9a;
+  95   1        P0 = 0xff;
+  96   1        switch(i2)
+  97   1        {
+  98   2          case 0 :ADDR2 = 0;ADDR1 = 0;ADDR0 = 0;P0 = image[j2+0];i2++;break;
+  99   2          case 1 :ADDR2 = 0;ADDR1 = 0;ADDR0 = 1;P0 = image[j2+1];i2++;break;
+ 100   2          case 2 :ADDR2 = 0;ADDR1 = 1;ADDR0 = 0;P0 = image[j2+2];i2++;break;
+ 101   2          case 3 :ADDR2 = 0;ADDR1 = 1;ADDR0 = 1;P0 = image[j2+3];i2++;break;
+ 102   2          case 4 :ADDR2 = 1;ADDR1 = 0;ADDR0 = 0;P0 = image[j2+4];i2++;break;
+ 103   2          case 5 :ADDR2 = 1;ADDR1 = 0;ADDR0 = 1;P0 = image[j2+5];i2++;break;
+ 104   2          case 6 :ADDR2 = 1;ADDR1 = 1;ADDR0 = 0;P0 = image[j2+6];i2++;break;
+ 105   2          case 7 :ADDR2 = 1;ADDR1 = 1;ADDR0 = 1;P0 = image[j2+7];i2=0;break;
+ 106   2        }
+ 107   1        tms++;
+ 108   1        if(tms == 50)
+ 109   1        {
+ 110   2          j2++;
+ 111   2          if(j2 == 32)
+ 112   2          {
+ 113   3            j2 = 0;
+ 114   3          }
+ 115   2        }
+ 116   1      }
+C51 COMPILER V9.59.0.0   LEDTUBEPOINT                                                      07/23/2021 12:27:39 PAGE 3   
+
+ 117            
+ 118          
+ 119          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    687    ----
+   CONSTANT SIZE    =     10    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     58    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

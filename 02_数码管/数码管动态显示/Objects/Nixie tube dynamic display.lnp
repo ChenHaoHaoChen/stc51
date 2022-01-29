@@ -1,0 +1,4 @@
+".\Objects\STARTUP.obj",
+".\Objects\Nixie tube dynamic display.obj" 
+TO ".\Objects\Nixie tube dynamic display" 
+PRINT(".\Listings\Nixie tube dynamic display.m51") RAMSIZE(256) 

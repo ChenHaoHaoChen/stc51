@@ -1,0 +1,85 @@
+C51 COMPILER V9.59.0.0   POINT                                                             07/23/2021 12:27:47 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE POINT
+OBJECT MODULE PLACED IN .\Objects\point.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE point.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\point
+                    -.lst) TABS(2) OBJECT(.\Objects\point.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          sbit ADDR0 = P1^0;
+   3          sbit ADDR1 = P1^1;
+   4          sbit ADDR2 = P1^2;
+   5          sbit ADDR3 = P1^3;
+   6          sbit ENLED = P1^4;
+   7          unsigned char image[]={                   //点阵动态显示数组
+   8            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+   9            0xC3,0xE7,0xE7,0xE7,0xE7,0xE7,0xC3,0xFF,
+  10            0x99,0x00,0x00,0x00,0x81,0xC3,0xE7,0xFF,
+  11            0x99,0x99,0x99,0x99,0x99,0x81,0xC3,0xFF,
+  12            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  13          };
+  14          unsigned char i =0;    //switch中条件判断变量
+  15          unsigned char j =0;    //切换数组 image[j+n]
+  16          unsigned int tms =0;  //刷新间隔
+  17          void main()
+  18          {
+  19   1        EA = 1;     //打开定时器T0中断
+  20   1        ET0 = 1;
+  21   1        
+  22   1        ENLED = 0;  //打开138译码器
+  23   1        ADDR3 = 0;
+  24   1        
+  25   1        TMOD = 0x01;//以M1模式打开定时器T0
+  26   1        TH0 = 0xfc; //定时1ms
+  27   1        TL0 = 0x67;
+  28   1        TR0 = 1;    
+  29   1        
+  30   1        while(1);
+  31   1      }
+  32          
+  33          void interrupttime() interrupt 1 //中断函数，定时器定时1ms溢出时，进入中断函数
+  34          {
+  35   1        TH0 = 0xfc;   //定时器1ms复位
+  36   1        TL0 = 0x67;
+  37   1        P0 = 0xff;    //消隐
+  38   1        switch(i)     //点阵显示
+  39   1              {
+  40   2                case 0 :ADDR2 = 0;ADDR1 = 0;ADDR0 = 0;P0 = image[j+0];i++;break;
+  41   2                case 1 :ADDR2 = 0;ADDR1 = 0;ADDR0 = 1;P0 = image[j+1];i++;break;
+  42   2                case 2 :ADDR2 = 0;ADDR1 = 1;ADDR0 = 0;P0 = image[j+2];i++;break;
+  43   2                case 3 :ADDR2 = 0;ADDR1 = 1;ADDR0 = 1;P0 = image[j+3];i++;break;
+  44   2                case 4 :ADDR2 = 1;ADDR1 = 0;ADDR0 = 0;P0 = image[j+4];i++;break;
+  45   2                case 5 :ADDR2 = 1;ADDR1 = 0;ADDR0 = 1;P0 = image[j+5];i++;break;
+  46   2                case 6 :ADDR2 = 1;ADDR1 = 1;ADDR0 = 0;P0 = image[j+6];i++;break;
+  47   2                case 7 :ADDR2 = 1;ADDR1 = 1;ADDR0 = 1;P0 = image[j+7];i=0;break;
+  48   2              }
+  49   1              tms++;
+  50   1              if(tms == 500) //0.5秒刷新一次
+  51   1              {
+  52   2                tms = 0;     
+  53   2                j++;
+  54   2                if(j == 32)
+C51 COMPILER V9.59.0.0   POINT                                                             07/23/2021 12:27:47 PAGE 2   
+
+  55   2                {
+  56   3                  j =0;
+  57   3                }
+  58   2              }
+  59   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    222    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     44    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

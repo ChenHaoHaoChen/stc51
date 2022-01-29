@@ -1,0 +1,4 @@
+".\Objects\STARTUP.obj",
+".\Objects\waterLED.obj" 
+TO ".\Objects\waterLED" 
+PRINT(".\Listings\waterLED.m51") RAMSIZE(256) 

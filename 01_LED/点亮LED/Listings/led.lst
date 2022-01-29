@@ -1,0 +1,38 @@
+C51 COMPILER V9.59.0.0   LED                                                               07/19/2021 10:48:07 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE LED
+OBJECT MODULE PLACED IN .\Objects\led.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE led.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\led.lst
+                    -) TABS(2) OBJECT(.\Objects\led.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          
+   3          sbit LED2 = P0^0;
+   4          sbit ENLED = P1^4;
+   5          sbit ADDR3 = P1^3;
+   6          sbit ADDR2 = P1^2;
+   7          sbit ADDR1 = P1^1;
+   8          sbit ADDR0 = P1^0;
+   9          
+  10          void main()
+  11          {
+  12   1        unsigned int i;
+  13   1        ENLED = 0;
+  14   1        ADDR3 = 1;
+  15   1        ADDR2 = 1;
+  16   1        ADDR1 = 1;
+  17   1        ADDR0 = 0;
+  18   1        while(1)
+  19   1        {
+  20   2          LED2 = 0;
+  21   2          for(i=1;i<=10000;i++)
+  22   2          LED2 = 1;
+  23   2          for(i=1;i<=10000;i++)
+  24   2        }
+*** ERROR C141 IN LINE 24 OF led.c: syntax error near '}', expected '__asm'
+  25   1      }
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

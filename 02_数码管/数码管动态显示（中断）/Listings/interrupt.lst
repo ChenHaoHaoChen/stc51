@@ -1,0 +1,102 @@
+C51 COMPILER V9.59.0.0   INTERRUPT                                                         08/19/2021 21:20:50 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE INTERRUPT
+OBJECT MODULE PLACED IN .\Objects\interrupt.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE interrupt.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\i
+                    -nterrupt.lst) TABS(2) OBJECT(.\Objects\interrupt.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          sbit ADDR0 = P1^0;
+   3          sbit ADDR1 = P1^1;
+   4          sbit ADDR2 = P1^2;
+   5          sbit ADDR3 = P1^3;
+   6          sbit ENLED = P1^4;
+   7          unsigned char code number[]={
+   8            0xc0,0xf9,0xa4,0xb0,0x99,
+   9            0x92,0x82,0xf8,0x80,0x90
+  10            };
+  11          unsigned char buffer[]={
+  12            0xff,0xff,0xff,0xff,0xff,0xff
+  13            };
+  14          unsigned int cnt = 0;
+  15          unsigned long sec = 0;
+  16           unsigned char i = 0;
+  17            
+  18          void main()
+  19          { 
+  20   1        ENLED = 0;    //74HC138使能端打开 
+  21   1        ADDR3 = 1;
+  22   1        
+  23   1        TMOD = 0x01;  //打开定时器
+  24   1        TH0 = 0xfc;
+  25   1        TL0 = 0x67;
+  26   1        TR0 = 1;
+  27   1        
+  28   1        EA=1;         //打开中断
+  29   1        ET0 = 1;
+  30   1        while(1)
+  31   1        {
+  32   2          if(cnt == 1000)
+  33   2          {
+  34   3            cnt = 0;
+  35   3            sec++;
+  36   3            buffer[0] = number[sec%10];
+  37   3            if(sec<10)    {buffer[1] = 0xff;}
+  38   3            else          {buffer[1] = number[sec/10%10];}
+  39   3            
+  40   3            if(sec<100)   {buffer[2] = 0xff;}
+  41   3            else          {buffer[2] = number[sec/100%10];}
+  42   3            
+  43   3            if(sec<1000)  {buffer[3] = 0xff;}
+  44   3            else          {buffer[3] = number[sec/1000%10];}
+  45   3            
+  46   3            if(sec<10000) {buffer[4] = 0xff;}
+  47   3            else          {buffer[4] = number[sec/10000%10];}
+  48   3            
+  49   3            if(sec<100000){buffer[5] = 0xff;}
+  50   3            else          {buffer[5] = number[sec/100000%10];}
+  51   3            
+  52   3          }
+  53   2        }
+  54   1      }
+C51 COMPILER V9.59.0.0   INTERRUPT                                                         08/19/2021 21:20:50 PAGE 2   
+
+  55          void interrupttime() interrupt 1 //x*8+3=向量地址
+  56          {
+  57   1        TH0 = 0xfc;
+  58   1        TL0 = 0x67;
+  59   1        cnt++;
+  60   1        
+  61   1        P0 = 0xff;
+  62   1        
+  63   1        switch(i)
+  64   1          {
+  65   2            case 0:ADDR2 = 0;ADDR1 = 0;ADDR0 = 0;P0 = buffer[0];i++;break;
+  66   2            case 1:ADDR2 = 0;ADDR1 = 0;ADDR0 = 1;P0 = buffer[1];i++;break;
+  67   2            case 2:ADDR2 = 0;ADDR1 = 1;ADDR0 = 0;P0 = buffer[2];i++;break;
+  68   2            case 3:ADDR2 = 0;ADDR1 = 1;ADDR0 = 1;P0 = buffer[3];i++;break;
+  69   2            case 4:ADDR2 = 1;ADDR1 = 0;ADDR0 = 0;P0 = buffer[4];i++;break;
+  70   2            case 5:ADDR2 = 1;ADDR1 = 0;ADDR0 = 1;P0 = buffer[5];i=0;break;
+  71   2          }
+  72   1      }
+  73          
+  74          
+  75          
+  76          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    547    ----
+   CONSTANT SIZE    =     10    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     13    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

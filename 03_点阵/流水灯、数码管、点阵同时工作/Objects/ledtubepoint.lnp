@@ -1,0 +1,4 @@
+".\Objects\STARTUP.obj",
+".\Objects\ledtubepoint.obj" 
+TO ".\Objects\ledtubepoint" 
+PRINT(".\Listings\ledtubepoint.m51") RAMSIZE(256) 

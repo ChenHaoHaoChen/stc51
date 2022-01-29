@@ -1,0 +1,4 @@
+".\Objects\STARTUP.obj",
+".\Objects\time LED.obj" 
+TO ".\Objects\time LED" 
+PRINT(".\Listings\time LED.m51") RAMSIZE(256) 
