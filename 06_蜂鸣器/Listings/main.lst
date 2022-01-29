@@ -1,0 +1,45 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              07/30/2021 12:05:20 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          
+   3          sbit BUZZ = P1^6;
+   4          
+   5          void main()
+   6          {
+   7   1        TMOD = 0X01;
+   8   1        TH0 = 0XFE;
+   9   1        TL0 = 0X33;
+  10   1        TR0 = 1;
+  11   1        EA = 1;
+  12   1        ET0 = 1;
+  13   1        BUZZ = 0;
+  14   1        while(1);
+  15   1      }
+  16          void interrupttime0() interrupt 1
+  17          {
+  18   1        TH0 = 0XFE;
+  19   1        TL0 = 0X33 ;
+  20   1        BUZZ = ~BUZZ;
+  21   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     28    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

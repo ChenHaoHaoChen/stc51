@@ -1,0 +1,224 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              08/11/2021 11:28:27 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1           #include <reg52.h>
+   2          sbit ADDR0 = P1^0;
+   3          sbit ADDR1 = P1^1;
+   4          sbit ADDR2 = P1^2;
+   5          sbit ADDR3 = P1^3;
+   6          sbit ENLED = P1^4;
+   7          sbit ESC = P2^5;
+   8          sbit ENTER = P2^6;
+   9          unsigned char code number[10]={   //数码管显示驱动数组     
+  10            0xc0,0xf9,0xa4,0xb0,0x99,
+  11            0x92,0x82,0xf8,0x80,0x90
+  12           };
+  13          unsigned char keyfinally[2]={     //按键终值
+  14            1,1
+  15           };
+  16          unsigned char ledbuffer[6]={      //六位数码管显示缓冲数组
+  17            0XFF,0XFF,0XFF,0XFF,0XFF,0XFF
+  18           };
+  19          unsigned char decimal = 0;        //计时小数部分
+  20          unsigned int integer = 0;         //计时整数部分
+  21          unsigned char TH01;               //定时补偿之后高位
+  22          unsigned char TL01;               //定时补偿之后地位
+  23          bit symbol = 0;                   //开始，暂定，结束定时标志位
+  24          void configtime(unsigned char ms);//函数声明部分
+  25          void keydriver();           
+  26          void stop();
+  27          void run();
+  28          void count();
+  29          void display();
+  30          void ledscan();
+  31          void keyscan();
+  32          void main()
+  33          {
+  34   1        ENLED = 0;                      //打开74138译码器
+  35   1        ADDR3 = 1;
+  36   1        TMOD = 0X01;                    //设置定时器为1模式
+  37   1        EA = 1;                         //中断使能打开
+  38   1        P2 = 0XFE;                      // 1111 1110 打开第四排按键
+  39   1        configtime(2);                  //定时函数（加补偿，一般补偿40）
+  40   1        while(1)
+  41   1        {
+  42   2          keydriver();
+  43   2        }
+  44   1      }
+  45          
+  46          void configtime(unsigned char ms)
+  47          {
+  48   1        unsigned long temp = 0;
+  49   1        temp = 65536-(ms*11059200)/(12*1000);//定时2ms
+  50   1        temp = temp + 40;                    //补偿40
+  51   1        TH01 = (unsigned char )(temp >> 8);  //高位赋值给TH01
+  52   1        TL01 = (unsigned char )temp;         //低位赋值给TL01
+  53   1        TH0 = TH01;
+  54   1        TL0 = TL01;
+C51 COMPILER V9.59.0.0   MAIN                                                              08/11/2021 11:28:27 PAGE 2   
+
+  55   1        TR0 = 1;                             //打开T0定时
+  56   1        ET0 = 1;                             //打开T0中断
+  57   1      }
+  58          
+  59          void keydriver()                       //按键检测函数 
+  60          {
+  61   1        static unsigned char backup[2]={     //按键上一个状态
+  62   1          1,1
+  63   1        };
+  64   1        static unsigned char i;
+  65   1        for(i=0;i<2;i++)
+  66   1        {
+  67   2          if(keyfinally[i] !=backup[i])
+  68   2          {
+  69   3            if(backup[i] == 0)
+  70   3            {
+  71   4              if(i == 0)                     //i == 0时，认定ESC按键按下
+  72   4              {
+  73   5                stop();                      //ESC按键按下，清零并停止计数            
+  74   5              }
+  75   4              else if(i == 1)                //i == 1时，认定ENTER按键按下
+  76   4              {
+  77   5                run();                       //ENTER按键按下，开始计时或者暂停计时
+  78   5              }
+  79   4            }
+  80   3            backup[i] = keyfinally[i];       //当前状态赋值给backup
+  81   3          }
+  82   2        }
+  83   1      }
+  84          
+  85          void stop()                            //停止计数函数
+  86          {
+  87   1        decimal = 0;                         //小数和整数部分清零
+  88   1        integer = 0;
+  89   1        symbol = 0;                          //标志位清零，即数码管停止跳动，一直显示0.00
+  90   1      }
+  91          
+  92          void run()                             //开始计时或者暂停函数
+  93          {
+  94   1        if(symbol)                           //用于开始和暂停的转换
+  95   1        {
+  96   2          symbol = 0;
+  97   2        }
+  98   1        else
+  99   1        {
+ 100   2          symbol = 1;
+ 101   2        }
+ 102   1      }
+ 103          
+ 104          void interrupttime0() interrupt 1      //每2ms进入一次中断
+ 105          {
+ 106   1        static unsigned char ms10 = 0;       //10ms定时
+ 107   1        TH0 = TH01;                          //重新定时
+ 108   1        TL0 = TL01;
+ 109   1        ms10++;
+ 110   1        if(ms10 == 5)                        //当定时到10ms时
+ 111   1        {
+ 112   2          ms10 = 0;                          //10ms定时清零
+ 113   2          count();                           //计数函数，每10ms加一
+ 114   2        }
+ 115   1        display();                           //数码管显示函数
+ 116   1        ledscan();                           //数码管扫描函数
+C51 COMPILER V9.59.0.0   MAIN                                                              08/11/2021 11:28:27 PAGE 3   
+
+ 117   1        keyscan();                           //按键扫描函数
+ 118   1      }
+ 119          
+ 120          void count()
+ 121          {
+ 122   1        if(symbol)                            //仅当标志位symbol=1时，开始计数
+ 123   1        {
+ 124   2          decimal++;
+ 125   2          if(decimal == 100)
+ 126   2          {
+ 127   3            decimal = 0;
+ 128   3            integer++;
+ 129   3            if(integer == 10000)              //最大定时到9999.99s，约等于两个半小时
+ 130   3            {
+ 131   4              integer = 0;
+ 132   4            }
+ 133   3          }
+ 134   2        }
+ 135   1      }
+ 136          
+ 137          void display()                          //数码管显示函数
+ 138          {
+ 139   1        static unsigned char i;
+ 140   1        ledbuffer[0] = number[decimal%10];
+ 141   1        ledbuffer[1] = number[decimal/10%10];
+ 142   1        ledbuffer[2] = number[integer%10] & 0X7F;
+ 143   1        ledbuffer[3] = number[integer/10%10];
+ 144   1        ledbuffer[4] = number[integer/100%10];
+ 145   1        ledbuffer[5] = number[integer/1000%10];
+ 146   1        for(i=5;i>2;i--)                     //高位灭零
+ 147   1        {
+ 148   2          if(ledbuffer[i] == 0XC0)
+ 149   2          {
+ 150   3            ledbuffer[i] = 0XFF;
+ 151   3          }
+ 152   2          else
+ 153   2          {
+ 154   3            break;
+ 155   3          }
+ 156   2        }
+ 157   1      }
+ 158          
+ 159          void ledscan()                         //数码管扫描函数，每2ms切换数码管一次
+ 160          {
+ 161   1        static unsigned char i = 0;
+ 162   1        P0 = 0XFF;                           //数码管消隐
+ 163   1        switch(i)
+ 164   1        {
+ 165   2          case 0:ADDR2 = 0;ADDR1 = 0;ADDR0 = 0;P0 = ledbuffer[i];i++;break;
+ 166   2          case 1:ADDR2 = 0;ADDR1 = 0;ADDR0 = 1;P0 = ledbuffer[i];i++;break;
+ 167   2          case 2:ADDR2 = 0;ADDR1 = 1;ADDR0 = 0;P0 = ledbuffer[i];i++;break;
+ 168   2          case 3:ADDR2 = 0;ADDR1 = 1;ADDR0 = 1;P0 = ledbuffer[i];i++;break;
+ 169   2          case 4:ADDR2 = 1;ADDR1 = 0;ADDR0 = 0;P0 = ledbuffer[i];i++;break;
+ 170   2          case 5:ADDR2 = 1;ADDR1 = 0;ADDR0 = 1;P0 = ledbuffer[i];i=0;break;
+ 171   2          default:break;
+ 172   2        }
+ 173   1      }
+ 174          
+ 175          void keyscan()                              //按键扫描函数
+ 176          {
+ 177   1        static unsigned char keybuffer[2]={       //按键扫描缓冲数组
+ 178   1          0XFF,0XFF 
+C51 COMPILER V9.59.0.0   MAIN                                                              08/11/2021 11:28:27 PAGE 4   
+
+ 179   1        };
+ 180   1        static unsigned char i;
+ 181   1        keybuffer[0] = (keybuffer[0] <<1) | ESC;  //每2ms移位一次
+ 182   1        keybuffer[1] = (keybuffer[1] <<1) | ENTER;
+ 183   1        for(i=0;i<2;i++)
+ 184   1        {
+ 185   2          if( (keybuffer[i] ) == 0X00 )           //连续扫描8次都是0时，即16ms内为按下状态时，认定按键按下
+ 186   2          {
+ 187   3            keyfinally[i] = 0;
+ 188   3          }
+ 189   2          else if( (keybuffer[i] ) == 0XFF )      //连续扫描8此都是1时，即16ms内为弹起状态时，认定按键弹起
+ 190   2          {
+ 191   3            keyfinally[i] = 1;
+ 192   3          }
+ 193   2        }
+ 194   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    679    ----
+   CONSTANT SIZE    =     10    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     22       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

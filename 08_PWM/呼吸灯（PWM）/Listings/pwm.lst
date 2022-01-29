@@ -1,0 +1,147 @@
+C51 COMPILER V9.59.0.0   PWM                                                               08/12/2021 12:35:56 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE PWM
+OBJECT MODULE PLACED IN .\Objects\pwm.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE pwm.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\pwm.lst
+                    -) TABS(2) OBJECT(.\Objects\pwm.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          sbit ADDR0 = P1^0;
+   3          sbit ADDR1 = P1^1;
+   4          sbit ADDR2 = P1^2;
+   5          sbit ADDR3 = P1^3;
+   6          sbit ENLED = P1^4;
+   7          sbit PWMOUT = P0;
+   8          unsigned char highTH0 = 0;  //每一周期高电平定时时间
+   9          unsigned char highTL0 = 0;
+  10          unsigned char lowTH0 = 0;   //每一周期低电平定时时间
+  11          unsigned char lowTL0 = 0;
+  12          unsigned char TH1R = 0;     //定义每多少ms进入中断1
+  13          unsigned char TL1R = 0;
+  14          unsigned long count = 0;    //定义一个周期所需计数值
+  15          void configpwm(unsigned char fr,unsigned char dr); //函数声明
+  16          void configtime(unsigned int ms);
+  17          void adjustpwmdr(unsigned dr);
+  18          
+  19          void main()
+  20          {
+  21   1        ENLED = 0;                //打开74138译码器
+  22   1        ADDR3 = 1;
+  23   1        ADDR2 = 1;                //打开六个小灯端口
+  24   1        ADDR1 = 1;
+  25   1        ADDR0 = 0;
+  26   1        EA = 1;                   //打开中断使能
+  27   1        TMOD = 0X01;              //设置定时器为1模式
+  28   1        configpwm(100,5);         //配置  
+  29   1        configtime(50);
+  30   1        while(1);
+  31   1      }
+  32          
+  33          void configpwm(unsigned char fr,unsigned char dr) //配置PWM，fr为频率，dr为占空比
+  34          {
+  35   1        unsigned int high,low;
+  36   1        count = (11059200/12)/fr;
+  37   1        high = (count*dr)/100;
+  38   1        low = count - high;
+  39   1        high = 65536 - high;
+  40   1        low = 65536 - low;
+  41   1        highTH0 = (unsigned char)(high >> 8);
+  42   1        highTL0 = (unsigned char) high;
+  43   1        lowTH0 = (unsigned char)(low >> 8);
+  44   1        lowTL0 = (unsigned char) low;
+  45   1        TH0 = highTH0;
+  46   1        TL0 = highTL0;
+  47   1        TR0 = 1;
+  48   1        ET0 = 1;
+  49   1        PWMOUT = 1;
+  50   1      }
+  51          
+  52          void configtime(unsigned int ms)                 //配置并启动T1,功能是：每ms毫秒刷新一次
+  53          {
+  54   1        unsigned long temp;
+C51 COMPILER V9.59.0.0   PWM                                                               08/12/2021 12:35:56 PAGE 2   
+
+  55   1        temp =65536 - (11059200/12)*(ms/1000);
+  56   1        TH1R = (unsigned char)(temp >> 8);
+  57   1        TL1R = (unsigned char) temp;
+  58   1        TH1 = TH1R;
+  59   1        TL1 = TL1R;
+  60   1        TR1= 1;
+  61   1        ET1 = 1;
+  62   1      }
+  63          
+  64          void interrupttime0() interrupt 1               //进入一次中断0改变一次输出的高低电平
+  65          {
+  66   1        if(PWMOUT == 1)
+  67   1        {
+  68   2          PWMOUT = 0;
+  69   2          TH0 = lowTH0; 
+  70   2          TL0 = lowTL0;
+  71   2        }
+  72   1        else
+  73   1        {
+  74   2          PWMOUT = 1;
+  75   2          TH0 = highTH0;
+  76   2          TL0 = highTL0;
+  77   2        }
+  78   1      }
+  79          
+  80          void interrupttiime1() interrupt 3              //进入一次中断1，调整一次占空比
+  81          {
+  82   1        static unsigned char table[]={
+  83   1          5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95
+  84   1        };
+  85   1        static unsigned char dir = 0;
+  86   1        static unsigned char index = 0;
+  87   1        TH1 = TH1R;
+  88   1        TL1 = TL1R;
+  89   1        adjustpwmdr(table[index]);
+  90   1        if(dir == 0)
+  91   1        {
+  92   2          index++;
+  93   2          if(index == 18)
+  94   2          {
+  95   3            dir = 1;
+  96   3          }
+  97   2        }
+  98   1        else
+  99   1        {
+ 100   2          index--;
+ 101   2          if(index == 0)
+ 102   2          {
+ 103   3            dir = 0;
+ 104   3          }
+ 105   2        }
+ 106   1      }
+ 107          
+ 108          void adjustpwmdr(unsigned dr)               //调整占空比函数
+ 109          {
+ 110   1        unsigned int high,low;
+ 111   1        high = (count * dr)/100;
+ 112   1        low = count - high;
+ 113   1        high = 65536 - high;
+ 114   1        low = 65536 - low;
+ 115   1        highTH0 = (unsigned char)(high >> 8);
+ 116   1        highTL0 = (unsigned char) high;
+C51 COMPILER V9.59.0.0   PWM                                                               08/12/2021 12:35:56 PAGE 3   
+
+ 117   1        lowTH0 = (unsigned char)(low >> 8);
+ 118   1        lowTL0 = (unsigned char) low;
+ 119   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    373    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     31       5
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

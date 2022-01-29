@@ -1,0 +1,136 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              08/13/2021 12:06:11 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          sbit PINRXD = P3^0;
+   3          sbit PINTXD = P3^1;
+   4          
+   5          bit rxdend = 0;
+   6          bit txdend = 0;
+   7          bit rxdortxd = 0;
+   8          unsigned char rxdbuffer = 0;
+   9          unsigned char txdbuffer = 0;
+  10          
+  11          void configbaud(unsigned int baud);
+  12          void startrxd();
+  13          void starttxd(unsigned char date);
+  14          
+  15          void main()
+  16          {
+  17   1        EA = 1;
+  18   1        configbaud(9600);
+  19   1        while(1)
+  20   1        {
+  21   2          while(PINRXD);
+  22   2          startrxd();
+  23   2          while(!rxdend);
+  24   2          starttxd(rxdbuffer + 1);
+  25   2          while(!txdend);
+  26   2        }   
+  27   1      }
+  28          void configbaud(unsigned int baud)
+  29          {
+  30   1        TMOD = 0X02;
+  31   1        TH0 = 256 - (11059200/12)/baud;
+  32   1      }
+  33          void startrxd()
+  34          {
+  35   1        TL0 = 256 - ((256 - TH0) >> 1);
+  36   1        TR0 = 1;
+  37   1        ET0 = 1;
+  38   1        rxdend = 0;
+  39   1        rxdortxd = 0;
+  40   1      }
+  41          void starttxd(unsigned char date)
+  42          {
+  43   1        txdbuffer = date;
+  44   1        TL0 = TH0;
+  45   1        TR0 = 1;
+  46   1        ET0 = 1;
+  47   1        PINTXD = 0;
+  48   1        txdend = 0;
+  49   1        rxdortxd = 1;
+  50   1      }
+  51          
+  52          void interrupttime0() interrupt 1
+  53          {
+  54   1        static unsigned char cnt;
+C51 COMPILER V9.59.0.0   MAIN                                                              08/13/2021 12:06:11 PAGE 2   
+
+  55   1        
+  56   1        if(rxdortxd)
+  57   1        {
+  58   2          cnt++;
+  59   2          if(cnt <= 8)
+  60   2          {
+  61   3            PINTXD = txdbuffer & 0X01;
+  62   3            txdbuffer = txdbuffer >> 1;
+  63   3          }
+  64   2          else if(cnt == 9)
+  65   2          {
+  66   3            PINTXD = 1;
+  67   3          }
+  68   2          else
+  69   2          {
+  70   3            cnt = 0;
+  71   3            TR0 = 0;
+  72   3            txdend = 1;
+  73   3          }
+  74   2        }
+  75   1        else
+  76   1        {
+  77   2          if(cnt == 0)
+  78   2          {
+  79   3            if(!PINRXD)
+  80   3            {
+  81   4              rxdbuffer = 0;
+  82   4              cnt++;
+  83   4            }
+  84   3            else
+  85   3            {
+  86   4              TR0 = 0;
+  87   4            }
+  88   3          }
+  89   2          else if(cnt <= 8)
+  90   2          {
+  91   3            rxdbuffer = rxdbuffer >> 1;
+  92   3            if(PINRXD)
+  93   3            {
+  94   4              rxdbuffer = rxdbuffer | 0x80;       
+  95   4            }
+  96   3            cnt++;
+  97   3          }
+  98   2          else
+  99   2          {
+ 100   3            cnt = 0;
+ 101   3            TR0 = 0;
+ 102   3            if(PINRXD)
+ 103   3            {
+ 104   4              rxdend = 1;
+ 105   4            }
+ 106   3          }
+ 107   2        }
+ 108   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    226    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3    ----
+C51 COMPILER V9.59.0.0   MAIN                                                              08/13/2021 12:06:11 PAGE 3   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
