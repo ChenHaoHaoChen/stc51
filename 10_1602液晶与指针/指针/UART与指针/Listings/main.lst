@@ -1,0 +1,100 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              08/16/2021 11:48:54 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          unsigned char cmdarriver = 0;        //cmdarriver为命令到来变量，当进入接受中断时置1
+   3          unsigned char index = 0;             //index为接受SBUF变量
+   4          unsigned char cnt = 0;               //cnt为计数变量，存放数组元素个数
+   5          unsigned char *p;                    //指针变量p
+   6          unsigned char arrary1[]={"1-Hello!\r\n"};        //数组1-4
+   7          unsigned char arrary2[]={'2','-','H','e','l','l','o','!','\r','\n'};
+   8          unsigned char arrary3[]={51,45,72,101,108,108,111,33,13,10};
+   9          unsigned char arrary4[]={"4-Hello!\r\n"};
+  10          void configUART(unsigned int buad);  //函数声明
+  11          void main()
+  12          {
+  13   1        EA = 1;                            //打开中断使能
+  14   1        configUART(9600);                  //配置波特率为9600
+  15   1        while(1)
+  16   1        {
+  17   2          if(cmdarriver)                  
+  18   2          {
+  19   3            cmdarriver = 0;
+  20   3            switch(index)
+  21   3            {
+  22   4              case 1:p = arrary1;          //p指针指向arrary1数组首地址，即第一个元素地址
+  23   4                     cnt = sizeof(arrary1);//计算arrary1数组元素个数
+  24   4                     TI = 1;               //由软件直接进入中断
+  25   4                     break;
+  26   4              case 2:p = arrary2;
+  27   4                     cnt = sizeof(arrary2);
+  28   4                     TI = 1;
+  29   4                     break;
+  30   4              case 3:p = arrary3;
+  31   4                     cnt = sizeof(arrary3);
+  32   4                     TI = 1;
+  33   4                     break;
+  34   4              case 4:p = arrary4;
+  35   4                     cnt = sizeof(arrary4);
+  36   4                     TI = 1;      
+  37   4                     break;
+  38   4              default:
+  39   4                     break;
+  40   4            }
+  41   3          }
+  42   2        }
+  43   1      }
+  44          void configUART(unsigned int buad)
+  45          {
+  46   1        SCON = 0X50;                       //配置UART串口为模式1（最常用的模式）
+  47   1        TMOD = TMOD & 0X0F;                //配置定时器1为模式2，即自动重装模式
+  48   1        TMOD = TMOD | 0X20;
+  49   1        TH1 = 256 - (11059200/12/32)/buad; //固定公式计算波特率
+  50   1        TL1 = TH1;
+  51   1        TR1 = 1;                           //打开定时器1
+  52   1        ES = 1;                            //打开UART串口中断  
+  53   1      }
+  54          /*UART串口中断，当RI=1（发送中断标志位，发送到停止位中间位置）进入中断
+C51 COMPILER V9.59.0.0   MAIN                                                              08/16/2021 11:48:54 PAGE 2   
+
+  55                          当TI=1（接受中断标志位，接受到停止位中间位置）进入中断*/
+  56          void interruptUART() interrupt 4
+  57          {
+  58   1        if(RI)
+  59   1        {
+  60   2          RI = 0;
+  61   2          cmdarriver = 1;
+  62   2          index = SBUF;
+  63   2        }
+  64   1        if(TI)
+  65   1        {
+  66   2          TI = 0;
+  67   2          if(cnt > 0)
+  68   2          {
+  69   3            SBUF = *p;
+  70   3            p++;
+  71   3            cnt--;
+  72   3          }
+  73   2        }
+  74   1      }     
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    212    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     48    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

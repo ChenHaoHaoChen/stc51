@@ -1,0 +1,167 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              08/20/2021 10:55:44 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #define LCD1602_DB P0
+   3          sbit LCD1602_RS = P1^0;
+   4          sbit LCD1602_RW = P1^1;
+   5          sbit LCD1602_E = P1^5;
+   6          
+   7          bit flag500ms = 0;
+   8          unsigned char TH0R;
+   9          unsigned char TL0R;
+  10            unsigned char code str1[]={
+  11              "                CHH And ZYJ                "
+  12            };
+  13            unsigned char code str2[]={
+  14              "                2021 /8/ 18                "
+  15            };
+  16          
+  17          void configtime(unsigned int ms);
+  18          void LCD1602init();
+  19          void LCD1602writecmd(unsigned char cmd);
+  20          void LCD1602readstate();
+  21          void LCD1602show(unsigned char x,unsigned char y,unsigned char *p);
+  22          void LCD1602setcoor(unsigned char x,unsigned char y);
+  23          void LCD1602writedata(unsigned char dat);
+  24          
+  25          void main()
+  26          {
+  27   1        unsigned char index = 0;
+  28   1        EA = 1;
+  29   1        LCD1602init();
+  30   1        configtime(10);
+  31   1        while(1)
+  32   1        {
+  33   2          if(flag500ms)   //每500ms刷新一次
+  34   2          {
+  35   3            flag500ms = 0;
+  36   3            LCD1602show(0,0,str1+index); //index为刷新指针索引
+  37   3            LCD1602show(0,1,str2+index);
+  38   3            index++;
+  39   3            if(index == sizeof(str1))
+  40   3            {
+  41   4              index = 0;
+  42   4            }
+  43   3          }
+  44   2        }
+  45   1      }
+  46          
+  47          void configtime(unsigned int ms)
+  48          {
+  49   1        unsigned long temp;
+  50   1        temp = 65536 - (11059200/12*ms/1000);
+  51   1        TH0R = (unsigned char)(temp >> 8);
+  52   1        TL0R = (unsigned char) temp;
+  53   1        TMOD = TMOD & 0XF0;
+  54   1        TMOD = TMOD | 0X01;
+C51 COMPILER V9.59.0.0   MAIN                                                              08/20/2021 10:55:44 PAGE 2   
+
+  55   1        TH0 = TH0R;
+  56   1        TL0 = TL0R;
+  57   1        TR0 = 1;
+  58   1        ET0 = 1;
+  59   1      }
+  60          
+  61          void interrupttime0() interrupt 1
+  62          {
+  63   1        static unsigned char i = 0;
+  64   1        TH0 = TH0R;
+  65   1        TL0 = TL0R;
+  66   1        i++;
+  67   1        if(i == 50)
+  68   1        {
+  69   2          i = 0;
+  70   2          flag500ms = 1;
+  71   2        }
+  72   1      }
+  73          
+  74          void LCD1602init()
+  75          {
+  76   1        LCD1602writecmd(0X38);
+  77   1        LCD1602writecmd(0X0C);
+  78   1        LCD1602writecmd(0X06);
+  79   1        LCD1602writecmd(0X01);
+  80   1      }
+  81          
+  82          void LCD1602writecmd(unsigned char cmd)
+  83          {
+  84   1        LCD1602readstate();
+  85   1        LCD1602_RS = 0;
+  86   1        LCD1602_RW = 0;
+  87   1        LCD1602_DB = cmd;
+  88   1        LCD1602_E = 0;
+  89   1        LCD1602_E = 1;
+  90   1        LCD1602_E = 0;
+  91   1      }
+  92          
+  93          void LCD1602readstate()
+  94          {
+  95   1        unsigned char sta7;
+  96   1        LCD1602_RS = 0;
+  97   1        LCD1602_RW = 1;
+  98   1        do
+  99   1        {
+ 100   2          LCD1602_E = 1;
+ 101   2          sta7 = LCD1602_DB;
+ 102   2          LCD1602_E = 0;
+ 103   2        }
+ 104   1        while(sta7 & 0X80);
+ 105   1      }
+ 106          
+ 107          void LCD1602show(unsigned char x,unsigned char y,unsigned char *p)
+ 108          {
+ 109   1        LCD1602setcoor(x,y);
+ 110   1        while(*p != '\0')
+ 111   1        {
+ 112   2          LCD1602writedata(*p++);
+ 113   2        }
+ 114   1      }
+ 115          
+ 116          void LCD1602setcoor(unsigned char x,unsigned char y)
+C51 COMPILER V9.59.0.0   MAIN                                                              08/20/2021 10:55:44 PAGE 3   
+
+ 117          {
+ 118   1        unsigned char add;
+ 119   1        if(y == 0)
+ 120   1        {
+ 121   2          add = 0X00 + x;
+ 122   2        }
+ 123   1        else 
+ 124   1        {
+ 125   2          add = 0X40 + x;
+ 126   2        }
+ 127   1        LCD1602writecmd(add | 0X80);
+ 128   1      }
+ 129          
+ 130          void LCD1602writedata(unsigned char dat)
+ 131          {
+ 132   1        LCD1602readstate();
+ 133   1        LCD1602_RS = 1;
+ 134   1        LCD1602_RW = 0;
+ 135   1        LCD1602_DB = dat;
+ 136   1        LCD1602_E = 0;
+ 137   1        LCD1602_E = 1;
+ 138   1        LCD1602_E = 0;
+ 139   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    293    ----
+   CONSTANT SIZE    =     88    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

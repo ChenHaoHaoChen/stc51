@@ -1,0 +1,4 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj" 
+TO ".\Objects\1602" 
+PRINT(".\Listings\1602.m51") RAMSIZE(256) 
